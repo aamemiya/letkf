@@ -60,14 +60,14 @@ MODULE lorenz96
 
   INTEGER,PARAMETER,PUBLIC :: nx=8          ! number of grid points of large scale variable
   INTEGER,PARAMETER,PUBLIC :: nxx=256        ! number of grid points of small scale variable
-  INTEGER,PARAMETER,PUBLIC :: ntot=nx+nxx     ! number of total grid points
+  INTEGER,PARAMETER,PUBLIC :: ntot=nx+nxx   ! number of total grid points
   REAL(r_size),SAVE,PUBLIC :: dt=0.005d0    ! time of one time step
   REAL(r_size),SAVE,PUBLIC :: force=8.0d0   ! F term
   REAL(r_size),SAVE,PUBLIC :: oneday=0.2d0  ! time for one day
 
-  REAL(r_size),SAVE,PUBLIC :: vh=1.0d0    ! coupling intensity
-  REAL(r_size),SAVE,PUBLIC :: vc=10.0d0   ! scale separation
-  REAL(r_size),SAVE,PUBLIC :: vb=10.0d0   ! scale separation
+  REAL(r_size),SAVE,PUBLIC :: vh=1.0d0      ! coupling intensity
+  REAL(r_size),SAVE,PUBLIC :: vc=10.0d0      ! scale separation
+  REAL(r_size),SAVE,PUBLIC :: vb=10.0d0      ! scale separation
 
   LOGICAL,SAVE,PUBLIC :: flag_mat=.false.
   REAL(r_size),SAVE,PUBLIC :: cpl_mat(nx,nxx) ! Coupling matrix
@@ -337,7 +337,7 @@ SUBROUTINE set_cpl
      do i=1,nx
         ista=nratio*(i-1)+1
         iend=nratio*(i-1)+nratio
-        cpl_mat(i,ista:iend) = 1.0 / real(nratio)
+        cpl_mat(i,ista:iend) = 1.0 
      end do
 
      flag_mat=.true.

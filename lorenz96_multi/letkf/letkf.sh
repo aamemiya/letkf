@@ -1,8 +1,11 @@
 #!/bin/sh
 #set -e
 VAR=_biased
+#METHOD=
+METHOD=_DdSM
 OBS=all
-EXP=M10L30I05
+#EXP=M10L30I05
+EXP=M10L30I05_A20B98
 MONITOR=T
 
 if [ "$MONITOR" == "T" ] ;then 
@@ -29,13 +32,13 @@ cp $COMDIR/common_mtx.f90 .
 cp $COMDIR/common_letkf.f90 .
 cp $L96DIR/model/lorenz96$VAR.f90 .
 cp $L96DIR/obs/h_ope.f90 .
-cp $CDIR/letkf.f90 .
+cp $CDIR/letkf${METHOD}.f90 .
 
 if [ "$MONITOR" == "T" ] ;then 
 cp $CDIR/monitor_yspace.f90 .
-$F90 -o letkf SFMT.f90 common.f90 netlib.f common_mtx.f90 common_letkf.f90 lorenz96$VAR.f90 h_ope.f90 letkf.f90 monitor_yspace.f90
+$F90 -o letkf SFMT.f90 common.f90 netlib.f common_mtx.f90 common_letkf.f90 lorenz96$VAR.f90 h_ope.f90 letkf${METHOD}.f90 monitor_yspace.f90
 else
-$F90 -o letkf SFMT.f90 common.f90 netlib.f common_mtx.f90 common_letkf.f90 lorenz96$VAR.f90 h_ope.f90 letkf.f90 
+$F90 -o letkf SFMT.f90 common.f90 netlib.f common_mtx.f90 common_letkf.f90 lorenz96$VAR.f90 h_ope.f90 letkf${METHOD}.f90 
 fi
 
 rm *.mod
@@ -46,7 +49,7 @@ ln -s $OUTDIR/nature.dat .
 time ./letkf
 rm -rf $OUTDIR/$OBS/$EXP
 mkdir -p $OUTDIR/$OBS/$EXP
-for FILE in guesmean analmean gues anal infl rmse_t rmse_x
+for FILE in guesmean analmean gues anal infl rmse_t rmse_x biasgues biasanal
 do
 if test -f $FILE.dat
 then

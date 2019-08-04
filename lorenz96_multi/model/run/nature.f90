@@ -6,8 +6,8 @@ PROGRAM nature
   IMPLICIT NONE
 
   INTEGER,PARAMETER :: ndays=3600 ! 10 years
-  REAL(r_size) :: xy(nxy)
-  REAL(r_sngl) :: xy4(nxy)
+  REAL(r_size) :: xy(ntot)
+  REAL(r_sngl) :: xy4(ntot)
   INTEGER :: i,ktoneday
   INTEGER :: ktcyc
 
@@ -23,7 +23,7 @@ PROGRAM nature
   DO i=1,ndays*4
     xy4 = xy
     WRITE(90) xy4(1:nx)
-    WRITE(91) xy4(nx+1:nxy)
+    WRITE(91) xy4(nx+1:ntot)
     CALL tinteg_rk4(ktcyc,xy,xy)
     if (mod(i,100).eq.0) WRITE(*,*) i,xy4(1:3)
   END DO
