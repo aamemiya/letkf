@@ -1,4 +1,4 @@
-DSET ^infl.dat
+DSET ^biasanal.dat
 TITLE LORENZ96 MODEL OUTPUT
 UNDEF -9.99E33
 OPTIONS sequential

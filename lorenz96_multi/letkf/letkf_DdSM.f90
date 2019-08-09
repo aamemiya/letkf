@@ -25,14 +25,15 @@ PROGRAM letkf
 ! negative value for no time localization
   REAL(r_size) :: sa=1.0d0 ! adaptive localization parameter
   REAL(r_size) :: sb=1.0d0 ! adaptive localization parameter
-  REAL(r_size),PARAMETER :: msw_infl=1.05d0 ! inflation mode switch
+  REAL(r_size),PARAMETER :: msw_infl=1.20d0 ! inflation mode switch
 ! msw_infl : inflation mode switch
 !  < 0 : adaptive inflation
 !  > 0 : fixed inflation value
   REAL(r_size) :: parm_infl(nx,nt) ! inflation parameter
   REAL(r_size) :: parm
   REAL(r_size) :: xmaxloc
-  REAL(r_size) :: obserr=1.0d0
+!  REAL(r_size) :: obserr=1.0d0
+  REAL(r_size) :: obserr=0.1d0
   REAL(r_sngl) :: y4(ny)
   REAL(r_sngl) :: x4(nx)
   REAL(r_size) :: xnature(nx,nt)
@@ -73,8 +74,8 @@ PROGRAM letkf
   REAL(r_size) :: bf(nx)
   REAL(r_size) :: transm(nbv)
 
-  REAL(r_size),PARAMETER :: valpha=0.2d0 ! time localization scale
-  REAL(r_size),PARAMETER :: vmu=0.98d0 ! time localization scale
+  REAL(r_size),PARAMETER :: valpha=0.015d0 ! relative bias error
+  REAL(r_size),PARAMETER :: vmu=0.999d0 ! persistence
 
 !===================!
 !-----------------------------------------------------------------------
@@ -97,7 +98,10 @@ PROGRAM letkf
   PRINT '(A,F8.1)',' sa        : ',sa
   PRINT '(A,F8.1)',' sb        : ',sb
   PRINT '(A,F8.2)',' msw_infl  : ',msw_infl
-  PRINT '(A)'     ,'=================================='
+  PRINT '(A)'     ,'==========BIAS correction=========='
+  PRINT '(A,F8.2)',' alpha  : ',valpha
+  PRINT '(A,F8.3,A,F6.1,A)',' mu  : ',vmu, ' ( half-life day : ',log(0.5)/log(vmu)/real(ktoneday), 'day )'
+
 !-----------------------------------------------------------------------
 ! nature
 !-----------------------------------------------------------------------
@@ -206,11 +210,14 @@ PROGRAM letkf
     !
     DO n=1,nwindow
       DO j=1,nbv
-        CALL set_h(xf(:,j,n))
+        CALL set_h(xf(:,j,n)-bf(:))
+!        CALL set_h(xf(:,j,n))
         h4d(:,:,n) = h
         hxf(:,j,n) = h4d(:,1,n) * ( xf(1,j,n) - bf(1) )
+!        hxf(:,j,n) = h4d(:,1,n) * xf(1,j,n)
         DO i=2,nx
           hxf(:,j,n) = hxf(:,j,n) +  h4d(:,i,n) * ( xf(i,j,n) -bf(i) )
+!          hxf(:,j,n) = hxf(:,j,n) +  h4d(:,i,n) * xf(i,j,n)
         END DO
       END DO
     END DO
@@ -275,16 +282,21 @@ PROGRAM letkf
           END DO
         END DO
         CALL letkf_core(nbv,ny*nwindow,ny_loc,hdxf_loc,rdiag_loc,rloc_loc,d_loc,parm,trans,transm)
+!        CALL letkf_core(nbv,ny*nwindow,ny_loc,hdxf_loc,rdiag_loc,rloc_loc,d_loc,parm,trans)
 
         IF(msw_infl > 0.0d0) parm = msw_infl
         DO j=1,nbv
-          xa(ix,j,nn) = xm(ix,nn)
+          xa(ix,j,nn) = xm(ix,nn) - bf(ix) !!! bias correction
+!          xa(ix,j,nn) = xm(ix,nn) 
           DO i=1,nbv
             xa(ix,j,nn) = xa(ix,j,nn) + dxf(ix,i,nn) * (trans(i,j)+transm(i)) !!! transm mush be added here
+!            xa(ix,j,nn) = xa(ix,j,nn) + dxf(ix,i,nn) * trans(i,j) !!! transm mush be added here
           END DO
         END DO
-        ba(ix) = bf(ix) - valpha*sum(dxf(ix,:,nn)*transm(:))
-
+        ba(ix) = bf(ix) - valpha*sum(dxf(ix,:,1)*transm(:))
+!        ba(ix) = bf(ix)
+!        ba(ix) = 0.0
+!
         parm_infl(ix,it+nn) = parm
       END DO
     END DO
@@ -380,6 +392,8 @@ PROGRAM letkf
   CLOSE(91)
   CLOSE(92)
   CLOSE(93)
+  CLOSE(94)
+  CLOSE(95)
 
   OPEN(10,FILE='infl.dat',FORM='unformatted')
   DO i=1,nt

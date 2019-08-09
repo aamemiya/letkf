@@ -25,7 +25,8 @@ PROGRAM nature
     WRITE(90) xy4(1:nx)
     WRITE(91) xy4(nx+1:ntot)
     CALL tinteg_rk4(ktcyc,xy,xy)
-    if (mod(i,100).eq.0) WRITE(*,*) i,xy4(1:3)
+!    if (mod(i,100).eq.0) WRITE(*,*) i,xy4(1:3)
+    if (mod(i,100).eq.0) WRITE(*,*) i,xy4(nx+1:nx+3)
   END DO
 
   STOP

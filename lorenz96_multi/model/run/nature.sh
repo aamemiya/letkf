@@ -1,8 +1,7 @@
 #!/bin/sh
 #set -e
 F90=ifort
-#ORO='_oro'
-ORO=
+VAR='_multi_test'
 CDIR=`pwd`
 cd ../..
 L96DIR=`pwd`
@@ -16,9 +15,9 @@ mkdir -p $WKDIR
 cd $WKDIR
 cp $COMDIR/SFMT.f90 .
 cp $COMDIR/common.f90 .
-cp $L96DIR/model/lorenz96_multi.f90 .
+cp $L96DIR/model/lorenz96${VAR}.f90 .
 cp $L96DIR/model/run/nature.f90 .
-$F90 -o nature SFMT.f90 common.f90 lorenz96_multi.f90 nature.f90
+$F90 -o nature SFMT.f90 common.f90 lorenz96${VAR}.f90 nature.f90
 rm *.mod
 rm *.o
 ln -s $OUTDIR/spinup/init_nature.dat fort.10

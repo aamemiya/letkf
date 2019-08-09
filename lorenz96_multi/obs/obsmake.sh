@@ -2,8 +2,8 @@
 #set -e
 ORO=
 #OBSNAME=regular13
-OBSNAME=all
-F90="ifort -CU -CB -traceback"
+OBSNAME=all_01
+F90="ifort"
 CDIR=`pwd`
 cd ..
 L96DIR=`pwd`

@@ -113,6 +113,7 @@ subroutine draw
   vpb=0.20
   vpt=0.70
 
+  call gliset('MSGLEV',1)
   call sgiset('IFONT',1)
   call swiset('ICLRMAP',6)
   call swcmll
