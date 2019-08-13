@@ -20,7 +20,7 @@ cp $L63DIR/model/run/train.f90 .
 $F90 -o nature SFMT.f90 common.f90 lorenz63${VAR}.f90 train.f90
 rm *.mod
 rm *.o
-ln -s $OUTDIR/spinup/init.dat fort.10
+ln -s $OUTDIR/spinup/init01.dat fort.10
 time ./nature
 mv fort.90 $OUTDIR/train.dat
-cp $CDIR/nature.ctl $OUTDIR
+cp $CDIR/train.ctl $OUTDIR
