@@ -43,7 +43,6 @@ call reg_init(nr,nr+1,nx,sub_basis,reg_in)
 
 allocate(eigen_r(nr),mat_dummy(nr,nr),rans1(nr),rans2(nr))
 
-rmat_in=0.0
 call com_rand(nr,rans1)
 call com_rand(nr,rans2)
 do ir=1,nr
@@ -83,7 +82,7 @@ end subroutine rsv_rnet_init
 !--------------------------------------------------------!
 subroutine rsv_rnet_input(x_in)
 real(r_size),intent(in)::x_in(:)
-real(r_size),allocatable::dr_in(:),dr_self(:)
+real(r_size)::dr_in,dr_self
 integer::ir
 
 if(.not.flag_init)then
@@ -91,18 +90,11 @@ if(.not.flag_init)then
  stop
 end if
 
-allocate(dr_in(nr),dr_self(nr))
-
  do ir=1,nr
-  dr_in(ir)  =sum(rmat_in(ir,:)*x_in(:))
-  dr_self(ir)=sum(amat(ir,:)*r(:)) 
+  dr_in  =sum(rmat_in(ir,:)*x_in(:))
+  dr_self=sum(amat(ir,:)*r(:)) 
+  r(ir)  =tanh(dr_in+dr_self)
  end do
-
- do ir=1,nr 
-  r(ir)  =tanh(dr_in(ir)+dr_self(ir))
- end do
-
-deallocate(dr_in,dr_self)
 
 return
 end subroutine rsv_rnet_input
