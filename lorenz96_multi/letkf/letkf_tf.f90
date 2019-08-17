@@ -5,8 +5,8 @@ PROGRAM letkf
   USE common
   USE common_letkf
   USE lorenz96
-!  USE lorenz96_oro
   USE h_ope
+  USE python_tf 
 
   IMPLICIT NONE
 
@@ -40,7 +40,8 @@ PROGRAM letkf
   REAL(r_size) :: xa(nx,nbv,nwindow)
   REAL(r_size) :: xf(nx,nbv,nwindow)
   REAL(r_size) :: dxf(nx,nbv,nwindow)
-  REAL(r_size) :: xm(nx,nwindow)
+  REAL(r_size) :: xfm(nx,nwindow)  !!!
+  REAL(r_size) :: xam(nx,nwindow)  !!!
   REAL(r_size) :: y(ny,nwindow)
   REAL(r_size) :: d(ny,nwindow)
   REAL(r_size) :: h4d(ny,nx,nwindow)
@@ -70,12 +71,15 @@ PROGRAM letkf
   INTEGER,PARAMETER :: nt_monitor_int=nt/20
   REAL(r_size) :: hxa(ny,nbv,nwindow)
 #endif
-  REAL(r_size) :: ba(nx)
-  REAL(r_size) :: bf(nx)
+  REAL(r_size) :: bf(1:nx)
   REAL(r_size) :: transm(nbv)
+  REAL(r_size) :: xf_corr(nx)
 
-  REAL(r_size),PARAMETER :: valpha=0.015d0 ! relative bias error
+  REAL(r_size),PARAMETER :: vbeta=0.010d0 ! relative bias error
   REAL(r_size),PARAMETER :: vmu=0.999d0 ! persistence
+  
+  integer,parameter::nt_corr_spinup=2000  
+  integer,parameter::nt_train_batch=1000  
 
 !===================!
 !-----------------------------------------------------------------------
@@ -99,7 +103,7 @@ PROGRAM letkf
   PRINT '(A,F8.1)',' sb        : ',sb
   PRINT '(A,F8.2)',' msw_infl  : ',msw_infl
   PRINT '(A)'     ,'==========BIAS correction=========='
-  PRINT '(A,F8.2)',' alpha  : ',valpha
+  PRINT '(A,F8.2)',' beta  : ',vbeta
   PRINT '(A,F8.3,A,F6.1,A)',' mu  : ',vmu, ' ( half-life day : ',log(0.5)/log(vmu)/real(ktoneday), 'day )'
 
 !-----------------------------------------------------------------------
@@ -121,9 +125,9 @@ PROGRAM letkf
     CLOSE(10)
   END DO
 !-----------------------------------------------------------------------
-! Bias initial conditions  = 0
+! Bias correction initialization
 !-----------------------------------------------------------------------
- bf(:) = 0.0
+  call init_tf(nx)
 !-----------------------------------------------------------------------
 ! main
 !-----------------------------------------------------------------------
@@ -146,13 +150,17 @@ PROGRAM letkf
   OPEN(91,FILE='analmean.dat',FORM='unformatted')
   OPEN(92,FILE='gues.dat',FORM='unformatted')
   OPEN(93,FILE='anal.dat',FORM='unformatted')
-  OPEN(94,FILE='biasgues.dat',FORM='unformatted')
-  OPEN(95,FILE='biasanal.dat',FORM='unformatted')
+
+  OPEN(94,FILE='xfm_train.dat',FORM='unformatted',STATUS='replace')
+  OPEN(95,FILE='xam_train.dat',FORM='unformatted',STATUS='replace')
   !>>>
   !>>> LOOP START
   !>>>
   it=1
+  WRITE(*,*) 'Loop start'
   DO
+  if (mod (it,100).eq.0) write(*,*) it,' / ',nt
+
     !
     ! read obs
     !
@@ -175,7 +183,7 @@ PROGRAM letkf
     !
     DO j=1,nwindow
       DO i=1,nx
-        CALL com_mean(nbv,xf(i,:,j),xm(i,j))
+        CALL com_mean(nbv,xf(i,:,j),xfm(i,j))
       END DO
     END DO
     !
@@ -183,7 +191,7 @@ PROGRAM letkf
     !
     DO j=1,nwindow
       DO i=1,nbv
-        dxf(:,i,j) = xf(:,i,j) - xm(:,j)
+        dxf(:,i,j) = xf(:,i,j) - xfm(:,j)
       END DO
     END DO
     !
@@ -191,15 +199,14 @@ PROGRAM letkf
     !
     IF(msw_detailout) THEN
       DO j=1,nwindow
-        x4 = xm(:,j)
+        x4 = xfm(:,j)
         WRITE(90) x4
+        WRITE(94) x4
         DO i=1,nbv
           x4 = xf(:,i,j)
           WRITE(92) x4
         END DO
       END DO
-        x4 = bf
-        WRITE(94) x4
     END IF
    
     !---------------
@@ -210,13 +217,19 @@ PROGRAM letkf
     !
     DO n=1,nwindow
       DO j=1,nbv
-        CALL set_h(xf(:,j,n)-bf(:))
+!!!!! Bias correction by TensorFlow 
+        if (it.ge.nt_corr_spinup) then
+         CALL calc_single_tf(nx,xf(:,j,n),xf_corr(:)) 
+        else
+         xf_corr(:)=xf(:,j,n)
+        end if
+        CALL set_h(xf_corr(:)) !!! incorrect but anyway no harm since Hx is linear
 !        CALL set_h(xf(:,j,n))
         h4d(:,:,n) = h
-        hxf(:,j,n) = h4d(:,1,n) * ( xf(1,j,n) - bf(1) )
+        hxf(:,j,n) = h4d(:,1,n) * xf_corr(1)
 !        hxf(:,j,n) = h4d(:,1,n) * xf(1,j,n)
         DO i=2,nx
-          hxf(:,j,n) = hxf(:,j,n) +  h4d(:,i,n) * ( xf(i,j,n) -bf(i) )
+          hxf(:,j,n) = hxf(:,j,n) +  h4d(:,i,n) * xf_corr(i)
 !          hxf(:,j,n) = hxf(:,j,n) +  h4d(:,i,n) * xf(i,j,n)
         END DO
       END DO
@@ -285,44 +298,41 @@ PROGRAM letkf
 !        CALL letkf_core(nbv,ny*nwindow,ny_loc,hdxf_loc,rdiag_loc,rloc_loc,d_loc,parm,trans)
 
         IF(msw_infl > 0.0d0) parm = msw_infl
+        if (it+nn.le.nt) parm_infl(ix,it+nn) = parm
+
+      END DO !!! ii
+
+        IF (it.ge.nt_corr_spinup) call calc_single_tf(nx,xfm(:,nn),xfm(:,nn)) !!!! bias correction 
+
         DO j=1,nbv
-          xa(ix,j,nn) = xm(ix,nn) - bf(ix) !!! bias correction
-!          xa(ix,j,nn) = xm(ix,nn) 
           DO i=1,nbv
-            xa(ix,j,nn) = xa(ix,j,nn) + dxf(ix,i,nn) * (trans(i,j)+transm(i)) !!! transm mush be added here
-!            xa(ix,j,nn) = xa(ix,j,nn) + dxf(ix,i,nn) * trans(i,j) !!! transm mush be added here
+            xa(:,j,nn) = xfm(:,nn) + dxf(:,i,nn) * (trans(i,j)+transm(i)) !!! transm must be added here
+!            xa(ix,j,nn) = xa(ix,j,nn) + dxf(ix,i,nn) * trans(i,j) !!! transm must be added here
           END DO
         END DO
-        ba(ix) = bf(ix) - valpha*sum(dxf(ix,:,1)*transm(:))
-!        ba(ix) = bf(ix)
-!        ba(ix) = 0.0
+
+    END DO !! nn
 !
-        if (it+nn.le.nt) parm_infl(ix,it+nn) = parm
-      END DO
-    END DO
-    !
-    ! ensemble mean
-    !
+!  ensemble mean
+!
     DO n=1,nwindow
       DO i=1,nx
-        CALL com_mean(nbv,xa(i,:,n),xm(i,n))
+        CALL com_mean(nbv,xa(i,:,n),xam(i,n))
       END DO
     END DO
-    !
-    ! output analysis
-    !
+
+! output analysis
+!
     IF(msw_detailout) THEN
       DO n=1,nwindow
-        x4 = xm(:,n)
+        x4 = xam(:,n)
         WRITE(91) x4
+        WRITE(95) x4
         DO i=1,nbv
           x4 = xa(:,i,n)
           WRITE(93) x4
         END DO
       END DO
-
-        x4 = ba
-        WRITE(95) x4
 
     END IF
 
@@ -330,16 +340,16 @@ PROGRAM letkf
     ! RMSE,SPRD
     !
     DO n=1,nwindow
-      rmse_t(it+n-1) = SQRT(SUM((xm(:,n)-xnature(:,it+n-1))**2)/REAL(nx,r_size))
+      rmse_t(it+n-1) = SQRT(SUM((xam(:,n)-xnature(:,it+n-1))**2)/REAL(nx,r_size))
       DO i=1,nx
-        sprd_t(it+n-1) = sprd_t(it+n-1) + SUM((xa(i,:,n)-xm(i,n))**2)
+        sprd_t(it+n-1) = sprd_t(it+n-1) + SUM((xa(i,:,n)-xam(i,n))**2)
       END DO
       sprd_t(it+n-1) = SQRT(sprd_t(it+n-1)/REAL(nx*nbv,r_size))
       infl_t(it+n-1) = SUM(parm_infl(:,it+n-1))/REAL(nx,r_size)
       IF(it > nspinup) THEN
         DO i=1,nx
-          rmse_x(i) = rmse_x(i) + (xm(i,n)-xnature(i,it+n-1))**2
-          sprd_x(i) = sprd_x(i) + SUM((xa(i,:,n)-xm(i,n))**2)/REAL(nbv,r_size)
+          rmse_x(i) = rmse_x(i) + (xam(i,n)-xnature(i,it+n-1))**2
+          sprd_x(i) = sprd_x(i) + SUM((xa(i,:,n)-xam(i,n))**2)/REAL(nbv,r_size)
           infl_x(i) = infl_x(i) + parm_infl(i,it+n-1)
         END DO
         irmse = irmse + 1
@@ -377,10 +387,18 @@ PROGRAM letkf
       CALL tinteg_rk4(ktcyc,xa(:,i,nwindow),xf(:,i,1))
     END DO
     !! 
-    !! Bias
+    !! Bias correction training 
     !! 
-      bf = vmu * ba
+    if (mod(it,nt_train_batch).eq.0) then
+       close(94)
+       close(95)
+       call train_tf(nt_train_batch) 
+       OPEN(94,FILE='xfm_train.dat',FORM='unformatted',STATUS='replace')
+       OPEN(95,FILE='xam_train.dat',FORM='unformatted',STATUS='replace')
+    end if
 
+!
+!
     it = it+nwindow
     IF(it > nt) EXIT
   END DO

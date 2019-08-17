@@ -267,7 +267,7 @@ PROGRAM letkf
             xa(ix,j,nn) = xa(ix,j,nn) + dxf(ix,i,nn) * trans(i,j)
           END DO
         END DO
-        parm_infl(ix,it+nn) = parm
+        if (it+nn.le.nt) parm_infl(ix,it+nn) = parm
       END DO
     END DO
     !

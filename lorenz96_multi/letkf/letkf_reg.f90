@@ -70,11 +70,11 @@ PROGRAM letkf
   INTEGER,PARAMETER :: nt_monitor_int=nt/20
   REAL(r_size) :: hxa(ny,nbv,nwindow)
 #endif
-  REAL(r_size) :: ba(nx)
-  REAL(r_size) :: bf(nx)
+  REAL(r_size) :: wba(1:nx,0:nx)
+  REAL(r_size) :: wbf(1:nx,0:nx)
   REAL(r_size) :: transm(nbv)
 
-  REAL(r_size),PARAMETER :: valpha=0.015d0 ! relative bias error
+  REAL(r_size),PARAMETER :: vbeta=0.010d0 ! relative bias error
   REAL(r_size),PARAMETER :: vmu=0.999d0 ! persistence
 
 !===================!
@@ -99,12 +99,13 @@ PROGRAM letkf
   PRINT '(A,F8.1)',' sb        : ',sb
   PRINT '(A,F8.2)',' msw_infl  : ',msw_infl
   PRINT '(A)'     ,'==========BIAS correction=========='
-  PRINT '(A,F8.2)',' alpha  : ',valpha
+  PRINT '(A,F8.2)',' beta  : ',vbeta
   PRINT '(A,F8.3,A,F6.1,A)',' mu  : ',vmu, ' ( half-life day : ',log(0.5)/log(vmu)/real(ktoneday), 'day )'
 
 !-----------------------------------------------------------------------
 ! nature
 !-----------------------------------------------------------------------
+  WRITE(*,*) 'read nature...'
   OPEN(10,FILE='nature.dat',FORM='unformatted')
   DO i=1,nt
     READ(10) x4
@@ -114,6 +115,7 @@ PROGRAM letkf
 !-----------------------------------------------------------------------
 ! initial conditions 'initXX.dat'
 !-----------------------------------------------------------------------
+  WRITE(*,*) 'read init...'
   DO i=1,nbv
     WRITE(initfile(5:6),'(I2.2)') i-1
     OPEN(10,FILE=initfile,FORM='unformatted')
@@ -123,7 +125,8 @@ PROGRAM letkf
 !-----------------------------------------------------------------------
 ! Bias initial conditions  = 0
 !-----------------------------------------------------------------------
- bf(:) = 0.0
+  WRITE(*,*) 'initialize bias coefficient...'
+ wbf(:,:) = 0.0d0
 !-----------------------------------------------------------------------
 ! main
 !-----------------------------------------------------------------------
@@ -152,7 +155,10 @@ PROGRAM letkf
   !>>> LOOP START
   !>>>
   it=1
+  WRITE(*,*) 'Loop start'
   DO
+  if (mod (it,100).eq.0) write(*,*) it,' / ',nt
+
     !
     ! read obs
     !
@@ -198,7 +204,7 @@ PROGRAM letkf
           WRITE(92) x4
         END DO
       END DO
-        x4 = bf
+        x4 = wbf(:,0)
         WRITE(94) x4
     END IF
    
@@ -210,13 +216,13 @@ PROGRAM letkf
     !
     DO n=1,nwindow
       DO j=1,nbv
-        CALL set_h(xf(:,j,n)-bf(:))
+        CALL set_h(xf(:,j,n)-wbf(:,0)) !!! incorrect but anyway no half since Hx is linear
 !        CALL set_h(xf(:,j,n))
         h4d(:,:,n) = h
-        hxf(:,j,n) = h4d(:,1,n) * ( xf(1,j,n) - bf(1) )
+        hxf(:,j,n) = h4d(:,1,n) * ( xf(1,j,n) - wbf(1,0) - sum(wbf(1,1:nx)*xf(1:nx,j,n)) )
 !        hxf(:,j,n) = h4d(:,1,n) * xf(1,j,n)
         DO i=2,nx
-          hxf(:,j,n) = hxf(:,j,n) +  h4d(:,i,n) * ( xf(i,j,n) -bf(i) )
+          hxf(:,j,n) = hxf(:,j,n) +  h4d(:,i,n) * ( xf(i,j,n) - wbf(i,0) -sum(wbf(i,1:nx)*xf(1:nx,j,n)) )
 !          hxf(:,j,n) = hxf(:,j,n) +  h4d(:,i,n) * xf(i,j,n)
         END DO
       END DO
@@ -286,21 +292,17 @@ PROGRAM letkf
 
         IF(msw_infl > 0.0d0) parm = msw_infl
         DO j=1,nbv
-          xa(ix,j,nn) = xm(ix,nn) - bf(ix) !!! bias correction
+          xa(ix,j,nn) = xm(ix,nn) - wbf(ix,0) - sum(wbf(ix,1:nx)*xm(1:nx,nn)) !!! bias correction
 !          xa(ix,j,nn) = xm(ix,nn) 
           DO i=1,nbv
-            xa(ix,j,nn) = xa(ix,j,nn) + dxf(ix,i,nn) * (trans(i,j)+transm(i)) !!! transm mush be added here
-!            xa(ix,j,nn) = xa(ix,j,nn) + dxf(ix,i,nn) * trans(i,j) !!! transm mush be added here
+            xa(ix,j,nn) = xa(ix,j,nn) + dxf(ix,i,nn) * (trans(i,j)+transm(i)) !!! transm must be added here
+!            xa(ix,j,nn) = xa(ix,j,nn) + dxf(ix,i,nn) * trans(i,j) !!! transm must be added here
           END DO
         END DO
-        ba(ix) = bf(ix) - valpha*sum(dxf(ix,:,1)*transm(:))
-!        ba(ix) = bf(ix)
-!        ba(ix) = 0.0
-!
         if (it+nn.le.nt) parm_infl(ix,it+nn) = parm
       END DO
     END DO
-    !
+   !
     ! ensemble mean
     !
     DO n=1,nwindow
@@ -308,9 +310,20 @@ PROGRAM letkf
         CALL com_mean(nbv,xa(i,:,n),xm(i,n))
       END DO
     END DO
-    !
-    ! output analysis
-    !
+!
+! Update bias correction coefficients
+!
+    DO ix=1,nx
+!        ba(ix) = bf(ix)
+!        ba(ix) = 0.0
+        wba(ix,0) = wbf(ix,0) - vbeta*sum(dxf(ix,:,1)*transm(:))
+        DO i=1,nx
+          wba(ix,i) = wbf(ix,i) - vbeta * xm(i,1) *sum(dxf(ix,:,1)*transm(:)) / (1.0d0+sum(xm(:,1)**2))
+        END DO
+    END DO
+!
+! output analysis
+!
     IF(msw_detailout) THEN
       DO n=1,nwindow
         x4 = xm(:,n)
@@ -321,7 +334,7 @@ PROGRAM letkf
         END DO
       END DO
 
-        x4 = ba
+        x4 = wba(:,0)
         WRITE(95) x4
 
     END IF
@@ -377,9 +390,9 @@ PROGRAM letkf
       CALL tinteg_rk4(ktcyc,xa(:,i,nwindow),xf(:,i,1))
     END DO
     !! 
-    !! Bias
+    !! Bias update
     !! 
-      bf = vmu * ba
+      wbf = vmu * wba
 
     it = it+nwindow
     IF(it > nt) EXIT

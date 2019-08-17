@@ -3,13 +3,13 @@
 VAR=_biased
 #METHOD=
 #METHOD=_DdSM
-METHOD=_reg
+METHOD=_tf
 OBS=all_01
 #EXP=M20L30I20
 #EXP=M20L30I20_A80NB99
 #EXP=test_DdSM
 #EXP=test
-EXP=reg
+EXP=tf_test
 
 MONITOR=F
 
@@ -26,6 +26,7 @@ cd ..
 ENKFDIR=`pwd`
 COMDIR=$ENKFDIR/common
 OUTDIR=$L96DIR/DATA
+PYDIR=$L96DIR/python
 WKDIR=$L96DIR/tmp
 rm -rf $WKDIR
 mkdir -p $WKDIR
@@ -38,12 +39,14 @@ cp $COMDIR/common_letkf.f90 .
 cp $L96DIR/model/lorenz96$VAR.f90 .
 cp $L96DIR/obs/h_ope.f90 .
 cp $CDIR/letkf${METHOD}.f90 .
-
+cp $PYDIR/python_tf.f90 .
+cp $PYDIR/*.py .
+cp $PYDIR/xfm_mean_sdv.dat .
 if [ "$MONITOR" == "T" ] ;then 
 cp $CDIR/monitor_yspace.f90 .
-$F90 -o letkf SFMT.f90 common.f90 netlib.f common_mtx.f90 common_letkf.f90 lorenz96$VAR.f90 h_ope.f90 letkf${METHOD}.f90 monitor_yspace.f90
+$F90 -o letkf SFMT.f90 common.f90 netlib.f common_mtx.f90 common_letkf.f90 lorenz96$VAR.f90 h_ope.f90 python_tf.f90 letkf${METHOD}.f90 monitor_yspace.f90
 else
-$F90 -o letkf SFMT.f90 common.f90 netlib.f common_mtx.f90 common_letkf.f90 lorenz96$VAR.f90 h_ope.f90 letkf${METHOD}.f90 
+$F90 -o letkf SFMT.f90 common.f90 netlib.f common_mtx.f90 common_letkf.f90 lorenz96$VAR.f90 h_ope.f90 python_tf.f90 letkf${METHOD}.f90 
 fi
 
 rm *.mod
@@ -54,7 +57,7 @@ ln -s $OUTDIR/nature.dat .
 time ./letkf
 rm -rf $OUTDIR/$OBS/$EXP
 mkdir -p $OUTDIR/$OBS/$EXP
-for FILE in guesmean analmean gues anal infl rmse_t rmse_x biasgues biasanal
+for FILE in guesmean analmean gues anal infl rmse_t rmse_x
 do
 if test -f $FILE.dat
 then
