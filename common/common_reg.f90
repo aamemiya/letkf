@@ -2,68 +2,92 @@
 module common_reg
 use common
 use common_mtx
-use common_dim
 
 implicit NONE
 
-real(r_size),save,private::w(nx,np)
-real(r_size),save,private::b(nx)
-real(r_size),save,private::r
+integer,save,private::nx,np,ny
 
-logical,save::flag_trained=.false.
+real(r_size),allocatable,private::w(:,:)
+real(r_size),save,private::reg
+
+logical,save,private::flag_trained=.false.
+
+procedure(),pointer :: x_to_p => null()
 
 contains 
 !------------------------------------------------!
-subroutine reg_train_batch(ndim,r_in,x_in,reg_in)
-implicit NONE
-integer,intent(IN)::ndim
-real(r_size),intent(IN)::r_in(nr,ndim)
-real(r_size),intent(IN)::x_in(nx,ndim)
+subroutine reg_init(nx_in,np_in,ny_in,sub_in,reg_in)
+integer,intent(in)::nx_in,np_in,ny_in
+external sub_in
 real(r_size),intent(IN),optional::reg_in
-real(r_size)::pwork(0:np,ndim)
-real(r_size)::wb(0:np,nx)
-real(r_size)::vmat_w1(0:np,0:np)
-real(r_size)::vmat_w2(0:np,nx)
-integer::ix,ip,jp,idim
+
+x_to_p=>sub_in
+nx=nx_in
+ny=ny_in
+np=np_in
+
+allocate(w(1:ny,1:np))
 
 if (.not.present(reg_in)) then
- r=0.0
+ reg=0.0
 else
- r=reg_in
+ reg=reg_in
 end if
 
+return
+end subroutine reg_init
+!------------------------------------------------!
+subroutine reg_train_batch(ndim,x_in,y_in)
+implicit NONE
+integer,intent(IN)::ndim
+real(r_size),intent(IN)::x_in(:,:)
+real(r_size),intent(IN)::y_in(:,:)
+
+real(r_size),allocatable::pwork(:,:),mat_w1(:,:),mat_w2(:,:)
+integer::iy,ip,jp,idim
+
+
+if(ubound(x_in,1).ne.nx.or.ubound(y_in,1).ne.ny)then
+ write(*,*) 'error::dimension mismatch nx or ny'
+ stop
+end if
+if(ubound(x_in,2).ne.ndim.or.ubound(y_in,2).ne.ndim)then
+ write(*,*) 'error::dimension mismatch ndim'
+ stop
+end if
+
+allocate(pwork(np,ndim),mat_w1(np,np),mat_w2(np,ny))
+
 do idim=1,ndim
- pwork(1:np,idim)=phi(r_in(1:nr,idim))
+ call x_to_p(x_in(:,idim),pwork(:,idim)) 
 end do
- pwork(0,:)=1.0
 
-vmat_w1=0.0
-vmat_w2=0.0
+mat_w1=0.0
+mat_w2=0.0
 
-do ip=0,np
-do jp=0,np
- vmat_w1(ip,jp)=sum(pwork(ip,1:ndim)*pwork(jp,1:ndim)) + r*dble(iddl(ip,jp))
+do ip=1,np
+do jp=1,np
+ mat_w1(ip,jp)=sum(pwork(ip,1:ndim)*pwork(jp,1:ndim)) + reg*dble(iddl(ip,jp))
 end do
 end do
 
 if (np.eq.0)then
-   vmat_w1 = 1.0/vmat_w1
+   mat_w1 = 1.0/mat_w1
 else
-   call mtx_inv(1+np,vmat_w1,vmat_w1)
+   call mtx_inv(np,mat_w1,mat_w1)
 end if
 
-do ip=0,np
-do ix=1,nx
-  vmat_w2(ip,ix)=sum(pwork(ip,1:ndim)*x_in(ix,1:ndim))
+do ip=1,np
+do iy=1,ny
+  mat_w2(ip,iy)=sum(pwork(ip,1:ndim)*y_in(iy,1:ndim))
 end do
 end do
 
-wb = matmul(vmat_w1,vmat_w2)
-
-b=wb(0,1:nx)
-w=transpose(wb(1:np,1:nx))
+w = transpose(matmul(mat_w1,mat_w2))
 
 flag_trained=.true.
+
+deallocate(pwork,mat_w1,mat_w2)
 
 return
 contains !=========!
@@ -78,20 +102,28 @@ contains !=========!
 
 end subroutine reg_train_batch 
 !------------------------------------------------!
-subroutine reg_fcst(r_in,x_out)
+subroutine reg_fcst(x_in,y_out)
 implicit NONE
-real(r_size),intent(IN)::r_in(nr)
-real(r_size),intent(OUT)::x_out(nx)
-integer::ix
+real(r_size),intent(IN)::x_in(:)
+real(r_size),intent(OUT)::y_out(:)
+real(r_size),allocatable::pwork(:)
+integer::i
 
 if (.not.flag_trained) then
  write(*,*) 'call reg_train first.'
  stop
 end if
+if(ubound(x_in,1).ne.nx.or.ubound(y_out,1).ne.ny)then
+ write(*,*) 'error::dimension mismatch nx or ny'
+ stop
+end if
 
-do ix=1,nx
- x_out(ix)=sum(w(ix,1:np)*phi(r_in))+b(ix)
+allocate(pwork(np))
+call x_to_p(x_in,pwork) 
+do i=1,ny
+ y_out(i)=sum(w(i,1:np)*pwork(1:np))
 end do
+deallocate(pwork)
 
 return
 end subroutine reg_fcst
