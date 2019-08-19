@@ -1,21 +1,59 @@
 # Lorenz96-multi
 
-Lorenz96 model coupled with smaller-scale Lorenz96 model
-("unresolved") processes 
+Lorenz96 model coupled with smaller-scale Lorenz96 model("unresolved processes")
 
 ## Getting started
-The main codes are written in plain Fortran90.  
-To exec a job, all the necessary processes (compilation, link, execution, copying input and output data) is wrapped in one shell script.  
+The main codes are written in Fortran90.  
+To exec a job, use a shell script in which all the necessary processes (compilation, link, execution, copying input and output data) are wrapped.  
 ### Spinup and nature run
-`cd model/run`
-`sh spinup.sh`
-`sh nature.sh`
+First, 'true' time evolution of the system needs to be prepared with the unbiased coupled Lorenz96 model.  
+Spinup -- create an initial condition at an arbitrary point on the attractor of the system
+`cd model/run`  
+`sh spinup_nature.sh`  
+The initial condition is to be created in `DATA/spinup/init_nature.dat`  
+  
+Nature run -- create a sample time evolution 
+`sh nature.sh` 
+This creates `DATA/nature.dat`
+
 ### Create initial conditions
+LETKF needs a set of initial conditions for ensemble forecasts.  
+Those are already created by `spinup.sh` and named as `DATA/spinup/initXX.dat`  
+
 ### Create observation
+Next, create observation time series.     
+`cd obs`
+`sh obsmake.sh`
+This reads the 'true' data from nature.dat and applies observational filters; random additive noise and variable transformation(optional).  
+Default setting is 'all_02', which means all varaibles are observed with random error of 0.2 standard deviation.
+The resultant file is `DATA/all_02/obs.dat`. 
+
 ### Data Assimilation with LETKF
-### Data Assimilation with LETKF bias correction
+Now you are ready to start a data assimilation experiment with LETKF. 
+`cd letkf`  
+`sh letkf.sh`  
+An observation type is specified.
+
+
+### Data Assimilation with LETKF + bias correction
+modify `letkf.sh`
+- letkf_DdSM.f90
+- letkf_reg.f90
+
 ### Reservoir computing
+
+`cd reservoir`  
+`sh rsv_test.sh`  
+
+
+
+`sh rsv_fcst.sh`
+
+Reservoir computing 'training reusability'
+
 ### Visualization
+
+For quicklook, the easiest way is to use [GrADS](http://cola.gmu.edu/grads/) (The Grid Analysis and Display System). Some ctl files are prepared for the data. Below are examples. 
 
 ## Changing configurations
 
