@@ -4,7 +4,7 @@ PROGRAM nature
 
   IMPLICIT NONE
 
-  INTEGER,PARAMETER :: nt=100000
+  INTEGER,PARAMETER :: nt=250000
   REAL(r_size) :: x(nx)
   REAL(r_sngl) :: x4(nx)
   INTEGER :: i,ktcyc
@@ -20,7 +20,6 @@ PROGRAM nature
     WRITE(90) x4
     CALL tinteg_rk4(ktcyc,x,x)
   END DO
-
 
   STOP
 END PROGRAM nature

@@ -5,7 +5,7 @@ PROGRAM spinup
   IMPLICIT NONE
 
   REAL(r_size) :: x(nx)
-  INTEGER,PARAMETER ::nt=10000 
+  INTEGER,PARAMETER ::nt=1000000 
   integer::it
   dt=0.005d0
 
