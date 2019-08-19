@@ -4,11 +4,12 @@ VAR=_biased
 #METHOD=
 #METHOD=_DdSM
 METHOD=_reg
-OBS=all_01
+OBS=all_02
 #EXP=M20L30I20
 #EXP=M20L30I20_A80NB99
-#EXP=test_DdSM
-#EXP=test
+#EXP=nocorr
+#EXP=nocorr_I80
+#EXP=DdSM
 EXP=reg
 
 MONITOR=F

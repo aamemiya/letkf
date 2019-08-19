@@ -1,8 +1,7 @@
 #!/bin/sh
 #set -e
 ORO=
-#OBSNAME=regular13
-OBSNAME=all_01
+OBSNAME=all_02
 F90="ifort"
 CDIR=`pwd`
 cd ..

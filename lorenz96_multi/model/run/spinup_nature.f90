@@ -1,7 +1,6 @@
 PROGRAM spinup
   USE common
   USE lorenz96
-!  USE lorenz96_oro
 
   IMPLICIT NONE
 

@@ -5,7 +5,6 @@ PROGRAM letkf
   USE common
   USE common_letkf
   USE lorenz96
-!  USE lorenz96_oro
   USE h_ope
 
   IMPLICIT NONE
@@ -25,15 +24,16 @@ PROGRAM letkf
 ! negative value for no time localization
   REAL(r_size) :: sa=1.0d0 ! adaptive localization parameter
   REAL(r_size) :: sb=1.0d0 ! adaptive localization parameter
-  REAL(r_size),PARAMETER :: msw_infl=1.20d0 ! inflation mode switch
+!  REAL(r_size),PARAMETER :: msw_infl=1.20d0 ! inflation mode switch
+  REAL(r_size),PARAMETER :: msw_infl=1.80d0 ! inflation mode switch
 ! msw_infl : inflation mode switch
 !  < 0 : adaptive inflation
 !  > 0 : fixed inflation value
   REAL(r_size) :: parm_infl(nx,nt) ! inflation parameter
   REAL(r_size) :: parm
   REAL(r_size) :: xmaxloc
+  REAL(r_size) :: obserr=0.2d0
 !  REAL(r_size) :: obserr=1.0d0
-  REAL(r_size) :: obserr=0.1d0
   REAL(r_sngl) :: y4(ny)
   REAL(r_sngl) :: x4(nx)
   REAL(r_size) :: xnature(nx,nt)
@@ -74,7 +74,8 @@ PROGRAM letkf
   REAL(r_size) :: bf(nx)
   REAL(r_size) :: transm(nbv)
 
-  REAL(r_size),PARAMETER :: valpha=0.015d0 ! relative bias error
+  REAL(r_size),PARAMETER :: valpha=0.01d0 ! relative bias error
+!  REAL(r_size),PARAMETER :: valpha=0.0d0 ! relative bias error
   REAL(r_size),PARAMETER :: vmu=0.999d0 ! persistence
 
 !===================!

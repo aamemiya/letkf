@@ -1,7 +1,6 @@
 PROGRAM nature
   USE common
   USE lorenz96
-!  USE lorenz96_oro
 
   IMPLICIT NONE
 
@@ -26,7 +25,7 @@ PROGRAM nature
     WRITE(91) xy4(nx+1:ntot)
     CALL tinteg_rk4(ktcyc,xy,xy)
 !    if (mod(i,100).eq.0) WRITE(*,*) i,xy4(1:3)
-    if (mod(i,100).eq.0) WRITE(*,*) i,xy4(nx+1:nx+3)
+    if (mod(i,1000).eq.0) WRITE(*,*) i,xy4(nx+1:nx+3)
   END DO
 
   STOP

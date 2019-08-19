@@ -10,8 +10,7 @@ PROGRAM obsmake
 
   INTEGER,PARAMETER :: ndays=3600
   INTEGER,PARAMETER :: nt=ndays*4
-!  REAL(r_size),PARAMETER :: obserr=1.0d0
-  REAL(r_size),PARAMETER :: obserr=0.1d0
+  REAL(r_size),PARAMETER :: obserr=0.2d0
   REAL(r_sngl) :: x4(nx)
   REAL(r_size) :: x(nx)
   REAL(r_size) :: ober(ny*nt)

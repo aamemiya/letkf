@@ -1,7 +1,7 @@
 #!/bin/sh
 #set -e
 F90=ifort
-VAR=_multi_test
+VAR=_multi
 CDIR=`pwd`
 cd ../..
 L96DIR=`pwd`
