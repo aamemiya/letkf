@@ -3,13 +3,12 @@ PROGRAM obsmake
 ! simulate observation data
 !=======================================================================
   USE common
-  USE lorenz96
+  USE KSmodel
   USE h_ope
 
   IMPLICIT NONE
 
-  INTEGER,PARAMETER :: ndays=3600
-  INTEGER,PARAMETER :: nt=ndays*4
+  INTEGER,PARAMETER :: nt=2000
   REAL(r_size),PARAMETER :: obserr=1.0d0
   REAL(r_sngl) :: x4(nx)
   REAL(r_size) :: x(nx)

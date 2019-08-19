@@ -4,18 +4,19 @@ PROGRAM letkf
 !=======================================================================
   USE common
   USE common_letkf
-  USE lorenz96
+  USE KSmodel
 !  USE lorenz96_oro
   USE h_ope
 
   IMPLICIT NONE
 
   LOGICAL,PARAMETER :: msw_detailout=.FALSE.
-  INTEGER,PARAMETER :: ndays=360*5
-  INTEGER,PARAMETER :: nt=ndays*4
+  INTEGER,PARAMETER :: nt=2000
   INTEGER,PARAMETER :: nwindow=1 ! time window for 4D-LETKF
-  INTEGER,PARAMETER :: nspinup=360*3*4 ! time steps for spin-up
+  INTEGER,PARAMETER :: nspinup=6000 ! time steps for spin-up
   INTEGER,PARAMETER :: msw_local=0 ! localization mode switch
+
+  REAL(r_size),PARAMETER :: dtsmp=0.25
 ! msw_local : localization mode switch
 !  0 : fixed localization
 !  1 : adaptive localization
@@ -68,10 +69,7 @@ PROGRAM letkf
 ! model parameters
 !-----------------------------------------------------------------------
   dt=0.005d0
-  force=8.0d0
-  oneday=0.2d0
-  ktoneday = INT(oneday/dt)
-  ktcyc = ktoneday/4
+  ktcyc = INT(dtsmp/dt)
   xmaxloc = xlocal * 2.0d0 * SQRT(10.0d0/3.0d0)
   nbv2 = CEILING(REAL(nbv)/2.0)
   PRINT '(A)'     ,'==========LETKF settings=========='

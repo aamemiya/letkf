@@ -3,11 +3,11 @@ MODULE h_ope
 ! observation operator
 !=======================================================================
   USE common
-  USE lorenz96
+  USE KSmodel
 
   IMPLICIT NONE
 
-  INTEGER,PARAMETER :: ny=13
+  INTEGER,PARAMETER :: ny=16
   REAL(r_size),SAVE :: h(ny,nx)
 
 CONTAINS
@@ -17,19 +17,9 @@ SUBROUTINE set_h(x)
   INTEGER :: i
   INTEGER :: idx(nx)
 
-  idx( 1)= 1
-  idx( 2)= 4
-  idx( 3)= 7
-  idx( 4)=10
-  idx( 5)=13
-  idx( 6)=16
-  idx( 7)=19
-  idx( 8)=22
-  idx( 9)=25
-  idx(10)=28
-  idx(11)=31
-  idx(12)=34
-  idx(13)=37
+do i=1,ny
+  idx(i)=1+4*real(i-1)
+end do
   h = 0.0d0
   DO i=1,ny
     h(i,idx(i)) = 1.0d0
