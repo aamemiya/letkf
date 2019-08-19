@@ -304,7 +304,7 @@ SUBROUTINE KS_core(xin,xout)
   END DO
     xout(nx-1) = - xin(nx-1) * ( xin(nx) - xin(nx-2) ) * 0.5*dxi - (xin(nx)-2.0*xin(nx-1)+xin(nx-2))*dxi**2 &
               - (xin(1)-4.0*xin(nx)+6.0*xin(nx-1)-4.0*xin(nx-2)+xin(nx-3)) *dxi**4 
-    xout(nx) = - xin(i) * ( xin(1) - xin(nx-1) ) * 0.5*dxi - (xin(1)-2.0*xin(nx)+xin(nx-1))*dxi**2 &
+    xout(nx) = - xin(nx) * ( xin(1) - xin(nx-1) ) * 0.5*dxi - (xin(1)-2.0*xin(nx)+xin(nx-1))*dxi**2 &
               - (xin(2)-4.0*xin(1)+6.0*xin(nx)-4.0*xin(nx-1)+xin(nx-2)) *dxi**4 
 
   xout(:) = dt * xout(:)
