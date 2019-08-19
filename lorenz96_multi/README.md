@@ -4,9 +4,12 @@ Lorenz96 model coupled with smaller-scale Lorenz96 model
 ("unresolved") processes 
 
 ## Getting started
-The main codes are written in plain Fortran90.
+The main codes are written in plain Fortran90.  
 To exec a job, all the necessary processes (compilation, link, execution, copying input and output data) is wrapped in one shell script.  
 ### Spinup and nature run
+`cd model/run`
+`sh spinup.sh`
+`sh nature.sh`
 ### Create initial conditions
 ### Create observation
 ### Data Assimilation with LETKF
