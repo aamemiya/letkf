@@ -27,10 +27,10 @@ Declear and set parameters in the header
 
      integer,parameter::nx=3     !!! system dimension  
      integer,parameter::nr=500   !!! reservoir dimension  
-     integer,parameter::nrdim_ave=3       !!! average network dimension   
+     integer,parameter::nrdim_ave=3       !!! average network dimension (nrdim_ave << nr) 
      real(r_size),parameter::vrho_in=0.4  !!! largest eigenvalue of the adjcency matrix     
      real(r_size),parameter::vsig_in=0.15 !!! input scaling   
-     real(r_size),parameter::vreg_in=0.20 !!! reguralization of linear regression  
+     real(r_size),parameter::vreg_in=0.20 !!! reguralization in linear regression  
 
 Define basis functions used in linear regression (the simplest case is shown below - it can be polynomial, Fourier series, or anything)
 
