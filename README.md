@@ -17,7 +17,6 @@ The original contents :
  A module for reservoir computing is `common/common_rsv_rnet.f90`.  
  It uses a simple linear-regression module `common/common_reg.f90`.  
  
-* Usage
 ### Use module
 Add a following line to the header to import the reservoir module 
     
