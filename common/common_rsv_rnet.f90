@@ -20,8 +20,8 @@ real(r_size),allocatable,private::rmat_in(:,:)
 contains
 !--------------------------------------------------------!
 
-subroutine rsv_rnet_init(nx_in,nr_in,ave_dim_in,rho_in,sig_in,sub_basis,reg_in)
-integer,intent(in)::nx_in,nr_in
+subroutine rsv_rnet_init(nx_in,nr_in,np_in,ave_dim_in,rho_in,sig_in,sub_basis,reg_in)
+integer,intent(in)::nx_in,nr_in,np_in
 integer,intent(in)::ave_dim_in
 real(r_size),intent(in)::rho_in,sig_in,reg_in
 real(r_size),allocatable::eigen_r(:),mat_dummy(:,:)
@@ -39,7 +39,7 @@ rho=rho_in
 
 allocate(r(nr),amat(nr,nr),rmat_in(nr,nx))
 
-call reg_init(nr,nr+1,nx,sub_basis,reg_in)
+call reg_init(nr,np_in,nx,sub_basis,reg_in)
 
 allocate(eigen_r(nr),mat_dummy(nr,nr),rans1(nr),rans2(nr))
 
