@@ -19,41 +19,50 @@ The original contents :
  
 * Usage
 ### Use module
-Add a following line to import the reservoir module 
-`use common_rsv_rnet`
+Add a following line to the header to import the reservoir module 
+    
+     use common_rsv_rnet
 
 ### Initialize
-Declear and set parameters in a header   
+Declear and set parameters in the header   
 
      integer,parameter::nx=3     !!! system dimension  
      integer,parameter::nr=500   !!! reservoir dimension  
+     integer,parameter::nrdim_ave=3       !!! average network dimension   
+     real(r_size),parameter::vrho_in=0.4  !!! largest eigenvalue of the adjcency matrix     
+     real(r_size),parameter::vsig_in=0.15 !!! input scaling   
+     real(r_size),parameter::vreg_in=0.20 !!! reguralization of linear regression  
 
+Define basis functions used in linear regression (the simplest case is shown below - it can be polynomial, Fourier series, or anything)
 
-
-`integer,parameter::nrdim_ave=3       !!! average network dimension`    
-    `real(r_size),parameter::vrho_in=0.4  !!! largest eigenvalue of the adjcency matrix`    
-    `real(r_size),parameter::vsig_in=0.15 !!! input scaling `  
-    `real(r_size),parameter::vreg_in=0.20 !!! reguralization of linear regression`  
-
-Define basis functions used in linear regression 
-`subroutine sub_basis_linear(vr,vp)  
-real(r_size),intent(IN)::vr(nr)  
-real(r_size),intent(out)::vp(nr+1)  
-integer::ir  
-do ir=1,nr-1,2  
- vp(ir)=vr(ir)  
-end do  
-do ir=2,nr,2  
- vp(ir)=vr(ir)**2  
-end do  
- vp(nr+1)=1.0 !!! constant component  
-return  
-end subroutine sub_basis_linear  `   
+    subroutine sub_basis_linear(vr,vp)  
+    real(r_size),intent(IN)::vr(nr)  
+    real(r_size),intent(out)::vp(nr+1)  
+    integer::ir  
+    do ir=1,nr  
+      vp(ir)=vr(ir)  
+    end do  
+     vp(nr+1)=1.0 !!! constant component  
+    return  
+    end subroutine sub_basis_linear  `   
 
 Call initialization before sync/train the reservoir  
-`rsv_rnet_init(nx,nr,nrdim_ave,vrho_in,vsig_in,sub_basis_linear,vreg_in)`
+This allocates reservoir array and input/output function matrice  
 
-
+    rsv_rnet_init(nx,nr,nrdim_ave,vrho_in,vsig_in,sub_basis_linear,vreg_in)
 
 ### Sync reservoir (without training)
+Just input the state variable (dimension nx)
+
+     call rsv_rnet_input(x)
+
 ### Train reservoir readout layer
+Store the time series (length nt_train) of the state variable in x_train(nx,nt_train) and call the subroutine
+(this calls rsv_rnet_input inside: do not call it explicitly in advance)
+
+     call rsv_rnet_train_batch(nt_train,x_train) 
+
+### Calculate forecast 
+Input x_in(nx) and get x_out(nx) 
+
+     call rsv_rnet_fcst(x_in,x_out)
