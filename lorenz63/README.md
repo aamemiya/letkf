@@ -61,7 +61,7 @@ First, let us test the reservoir computing scheme
 This reads the nature run result from `DATA/nature.dat` and train the reservoir using first `nt_train` records. Then switch to forecast mode from `nt_train+1` step.
 The forecast data is created as `DATA/fcst/fcst.dat`. It is identical to `nature.dat` up to `nt_train` and followed by resevoir-based forecasts.
 
-The more formal way to verify reservoir computing is to make forecast from totally different initial conditions.  
+The more formal way to verify the reservoir is to make forecast from a totally different initial condition.  
 
      sh rsv_fcst.sh
 
