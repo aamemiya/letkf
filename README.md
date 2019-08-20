@@ -24,6 +24,7 @@ Add a following line to import the reservoir module
 
 ### Initialize
 Declear and set parameters in a header   
+
      integer,parameter::nx=3     !!! system dimension  
      integer,parameter::nr=500   !!! reservoir dimension  
 
