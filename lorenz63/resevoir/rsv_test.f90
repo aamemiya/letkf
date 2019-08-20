@@ -27,7 +27,7 @@ integer::it
 
 !initialize a and r
 
-call rsv_rnet_init(nx,nr,nrdim_ave,vrho_in,vsig_in,sub_basis_linear,vreg_in)
+call rsv_rnet_init(nx,nr,nr+1,nrdim_ave,vrho_in,vsig_in,sub_basis_linear,vreg_in)
 
  time=0.0
  read(10)  x4
