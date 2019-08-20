@@ -16,12 +16,14 @@ Nature run -- create a sample time evolution
 `sh nature.sh` 
 This creates `DATA/nature.dat`
 
+<!--
 ### Create initial conditions
 LETKF needs a set of initial conditions for ensemble forecasts.  
 `cd model/run` 
 `sh spinup.sh`
 This creates `DATA/spinup/init.dat` and `DATA/spinup/initXX.dat` 
 *be sure that these may be on a different attractor from that of nature run if the model has a bias
+-->
 
 ### Create observation
 Next, create observation time series.     
@@ -31,6 +33,7 @@ This reads the 'true' data from nature.dat and applies observational filters; ra
 Default setting is 'all', which means all varaibles are observed with random error of 1.0 standard deviation.
 The resultant file is `DATA/all/obs.dat`. 
 
+<!--
 ### Data Assimilation with LETKF
 Now you are ready to start a data assimilation experiment with LETKF.  
 `cd letkf`  
@@ -43,21 +46,29 @@ The following resultaint files in a directory `DATA/all_02/test/` are
 `gues.dat`  
 `rmse_x.dat`  
 `rmse_t.dat`  
-
 ### Data Assimilation with LETKF + bias correction
 modify `letkf.sh`  
 - letkf_DdSM.f90  
 - letkf_reg.f90  
+-->
 
 ### Reservoir computing
+First, let us test the reservoir computing scheme 
 
-`cd reservoir`  
-`sh rsv_test.sh`   
+     cd reservoir  
+     sh rsv_test.sh     
 
+This reads the nature run result from `DATA/nature.dat` and train the reservoir using first `nt_train` records. Then switch to forecast mode from `nt_train+1` step.
+The forecast data is created as `DATA/fcst/fcst.dat`. It is identical to `nature.dat` up to `nt_train` and followed by resevoir-based forecasts.
 
-`sh rsv_fcst.sh`
+The more formal way to verify reservoir computing is to make forecast from totally different initial conditions.  
 
-Reservoir computing 'training reusability'
+     sh rsv_fcst.sh
+
+This trains the reservoir using first `nt_train` records of `nature_train.dat` in a similar way as before.  
+Then it reads a different time series `nature_test.dat` for `nt_sync` to make the reservoir re-synclonize (without re-training) and start forecasting.  
+**'training reusability'**  
+Once the output layer function is trained by a standard linear regression, the trained reservoir can be used for any different initial conditions (as long as it is in the same attractor).  
 
 ### Visualization
 
