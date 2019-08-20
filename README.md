@@ -14,8 +14,8 @@ The original contents :
  
  ## Reservoir computing fortran code
   
- A module for reservoir computing is `common/common_rsv_rnet.f90`.  
- It uses a simple linear-regression module `common/common_reg.f90`.  
+ A module for reservoir computing : `common/common_rsv_rnet.f90`  
+ It uses a simple linear-regression module `common/common_reg.f90`  
  
 ### Use module
 Add a following line to the header to import the reservoir module 
@@ -47,6 +47,7 @@ Define basis functions used in linear regression (the simplest case is shown bel
 
 Call initialization before sync/train the reservoir  
 This allocates reservoir array and input/output function matrice  
+**THIS NEED TO BE CORRECTED -- NP SHOULD BE IN INPUT VARS** 
 
     rsv_rnet_init(nx,nr,nrdim_ave,vrho_in,vsig_in,sub_basis_linear,vreg_in)
 
