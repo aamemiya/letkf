@@ -4,7 +4,7 @@ use common_rsv_rnet
 
 implicit NONE
 
-integer,parameter::nx=64
+integer,parameter::nx=8
 integer,parameter::nr=2000
 
 real(r_size),parameter::dt=0.25
@@ -26,7 +26,7 @@ real(r_size)::time
 integer::it
 
 write(*,*) 'initialization'
-call rsv_rnet_init(nx,nr,nrdim_ave,vrho_in,vsig_in,sub_basis_linear,vreg_in)
+call rsv_rnet_init(nx,nr,nr+1,nrdim_ave,vrho_in,vsig_in,sub_basis_linear,vreg_in)
 
  time=0.0
  read(10)  x4
