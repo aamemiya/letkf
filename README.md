@@ -24,9 +24,12 @@ Add a following line to import the reservoir module
 
 ### Initialize
 Declear and set parameters in a header 
-    `integer,parameter::nx=3     !!! system dimension`  
-    `integer,parameter::nr=500   !!! reservoir dimension`  
-    `integer,parameter::nrdim_ave=3       !!! average network dimension`    
+    integer,parameter::nx=3     !!! system dimension  
+integer,parameter::nr=500   !!! reservoir dimension  
+
+
+
+`integer,parameter::nrdim_ave=3       !!! average network dimension`    
     `real(r_size),parameter::vrho_in=0.4  !!! largest eigenvalue of the adjcency matrix`    
     `real(r_size),parameter::vsig_in=0.15 !!! input scaling `  
     `real(r_size),parameter::vreg_in=0.20 !!! reguralization of linear regression`  
