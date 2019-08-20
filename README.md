@@ -23,9 +23,9 @@ Add a following line to import the reservoir module
 `use common_rsv_rnet`
 
 ### Initialize
-Declear and set parameters in a header 
+Declear and set parameters in a header   
     integer,parameter::nx=3     !!! system dimension  
-integer,parameter::nr=500   !!! reservoir dimension  
+    integer,parameter::nr=500   !!! reservoir dimension  
 
 
 
