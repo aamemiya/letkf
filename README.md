@@ -1,4 +1,4 @@
-# README
+# LETKF + bias correction + resevoir computing
 
 This repository is forked from [takemasa-miyoshi/letkf](https://github.com/takemasa-miyoshi/letkf).
 
