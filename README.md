@@ -12,7 +12,7 @@ The original contents :
  
  See READMEs in each directory for details.
  
- ## Reservoir computing code
+ ## Reservoir computing fortran code
   
  A module for reservoir computing is `common/common_rsv_rnet.f90`.  
  It uses a simple linear-regression module `common/common_reg.f90`.  
