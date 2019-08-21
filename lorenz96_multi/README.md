@@ -5,6 +5,7 @@ Lorenz96 model coupled with smaller-scale Lorenz96 model("unresolved processes")
 ## Getting started
 The main codes are written in Fortran90.  
 To exec a job, use a shell script in which all the necessary processes (compilation, link, execution, copying input and output data) are wrapped.  
+
 ### Spinup and nature run
 First, 'true' time evolution of the system needs to be prepared with the unbiased coupled Lorenz96 model.  
 Spinup -- create an initial condition at an arbitrary point on the attractor of the system  
@@ -34,38 +35,54 @@ Default setting is 'all_02', which means all varaibles are observed with random 
 The resultant file is `DATA/all_02/obs.dat`. 
 
 ### Data Assimilation with LETKF
-Now you are ready to start a data assimilation experiment with LETKF.  
-`cd letkf`  
-`sh letkf.sh`  
+Now you are ready to perform a data assimilation experiment with LETKF.  
+
+     cd letkf
+     sh letkf.sh  
+
 An observation type and a letkf experiment name are specified in `letkf.sh`. By default they are `all_02` and `test`.  
-The following resultaint files in a directory `DATA/all_02/test/` are  
-`analmean.dat`  
-`guesmean.dat`  
-`anal.dat`  
-`gues.dat`  
-`rmse_x.dat`  
-`rmse_t.dat`  
+The following resultaint files will appear in a directory `DATA/all_02/test/`. 
+
+     analmean.dat  
+     guesmean.dat  
+     anal.dat  
+     gues.dat 
+     rmse_x.dat  
+     rmse_t.dat
 
 ### Data Assimilation with LETKF + bias correction
-modify `letkf.sh`  
-- letkf_DdSM.f90  
-- letkf_reg.f90  
+modify `letkf.sh` to use LETKF with simple bias correctioon. There are two methods available.  
+-letkf_DdSM.f90 : Simple iterative method assuming constant bias (Dee and da Silva, 1998)   
+-letkf_reg.f90 : Simple iterative method assuming bias linearly dependent on model state 
 
 ### Reservoir computing
-
-`cd reservoir`  
-`sh rsv_test.sh`   
-
-
-`sh rsv_fcst.sh`
-
-Reservoir computing 'training reusability'
+Try reservoir computing in the same way as in Lorenz63 model.
 
 ### Visualization
 
-For quicklook, the easiest way is to use [GrADS](http://cola.gmu.edu/grads/) (The Grid Analysis and Display System). Some ctl files are prepared for the data. Below are examples. 
+For quicklook, the easiest way is to use [GrADS](http://cola.gmu.edu/grads/) (The Grid Analysis and Display System).   
+Some ctl files are prepared in the same directory as data files.  
 
+Other languages or tools may be more suitable for analysing data. Reading the data with fortran is straightforward. 
+When you read data with other languages, be sure that there are buffer spaces in sequential data records as follows.   
+
+     4 byte buffer 
+     4*nx byte data array (t=1)
+     4 byte buffer
+     4 byte buffer 
+     4*nx byte data array (t=2)
+     4 byte array
+     
 ## Changing configurations
+
+Important parameters of this experiment is :
+-System size ('nx')
+-The level of nonlinearity ('force') 
+-Observation error ('obserr')
+-Ensemble size 
+-Covariance inflation factor (mswinfl)
+-Bias correction coefficient
+
 
 ## References
 About the model:  
