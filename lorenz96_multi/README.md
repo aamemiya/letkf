@@ -9,27 +9,35 @@ To exec a job, use a shell script in which all the necessary processes (compilat
 ### Spinup and nature run
 First, 'true' time evolution of the system needs to be prepared with the unbiased coupled Lorenz96 model.  
 Spinup -- create an initial condition at an arbitrary point on the attractor of the system  
-`cd model/run`  
-`sh spinup_nature.sh`  
+
+     cd model/run
+     sh spinup_nature.sh
+
 This creates the initial condition `DATA/spinup/init_nature.dat`  
  *this contains both large-scale and small-scale variables
  
 Nature run -- create a sample time evolution  
-`sh nature.sh` 
+
+     sh nature.sh
+
 This creates `DATA/nature.dat`
 *this contains only large-scale variables
 
 ### Create initial conditions
 LETKF needs a set of initial conditions for ensemble forecasts.  
-`cd model/run` 
-`sh spinup.sh`
+
+     cd model/run
+     sh spinup.sh
+
 This creates `DATA/spinup/init.dat` and `DATA/spinup/initXX.dat` 
 *these initial conditions contain only large-scale variables because these are for the (biased) imperfect model 
 
 ### Create observation
 Next, create observation time series.     
-`cd obs`
-`sh obsmake.sh`
+
+     cd obs
+     sh obsmake.sh
+
 This reads the 'true' data from nature.dat and applies observational filters; random additive noise and variable transformation(optional).  
 Default setting is 'all_02', which means all varaibles are observed with random error of 0.2 standard deviation.
 The resultant file is `DATA/all_02/obs.dat`. 
@@ -76,12 +84,13 @@ When you read data with other languages, be sure that there are buffer spaces in
 ## Changing configurations
 
 Important parameters of this experiment is :
--System size ('nx')
--The level of nonlinearity ('force') 
--Observation error ('obserr')
--Ensemble size 
--Covariance inflation factor (mswinfl)
--Bias correction coefficient
+
+-System size ('nx')  
+-The level of nonlinearity ('force')   
+-Observation error ('obserr')  
+-Ensemble size   
+-Covariance inflation factor (mswinfl)  
+-Bias correction coefficient  
 
 
 ## References
