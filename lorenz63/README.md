@@ -72,8 +72,19 @@ Once the output layer function is trained by a standard linear regression, the t
 
 ### Visualization
 
-For quicklook, the easiest way is to use [GrADS](http://cola.gmu.edu/grads/) (The Grid Analysis and Display System). Some ctl files are prepared for the data. Below are examples. 
+For quicklook, the easiest way is to use [GrADS](http://cola.gmu.edu/grads/) (The Grid Analysis and Display System).   
+Some ctl files are prepared in the same directory as data files.  
 
+Other languages or tools may be more suitable for analysing data. Reading the data with fortran is straightforward. 
+When you read data with other languages, be sure that there are buffer spaces in sequential data records as follows.   
+
+     4 byte buffer 
+     4*nx byte data array (t=1)
+     4 byte buffer
+     4 byte buffer 
+     4*nx byte data array (t=2)
+     4 byte array
+     
 ## Changing configurations
 
 ## References
