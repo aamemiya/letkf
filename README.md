@@ -32,7 +32,8 @@ Declear and set parameters in the header
      real(r_size),parameter::vsig_in=0.15 !!! input scaling   
      real(r_size),parameter::vreg_in=0.20 !!! reguralization in linear regression  
 
-Define basis functions used in linear regression (the simplest case is shown below - it can be polynomial, Fourier series, or anything)
+Define basis functions used in linear regression  
+(the simplest case is shown below - it can be polynomial, Fourier series, or anything - but using the simplest regression is the phylosophy of reservoir computing)
 
     subroutine sub_basis_linear(vr,vp)  
     real(r_size),intent(IN)::vr(nr)  
@@ -47,9 +48,8 @@ Define basis functions used in linear regression (the simplest case is shown bel
 
 Call initialization before sync/train the reservoir  
 This allocates reservoir array and input/output function matrice  
-**THIS NEED TO BE CORRECTED -- NP SHOULD BE IN INPUT VARS** 
 
-    rsv_rnet_init(nx,nr,nrdim_ave,vrho_in,vsig_in,sub_basis_linear,vreg_in)
+    rsv_rnet_init(nx,nr,nr+1,nrdim_ave,vrho_in,vsig_in,sub_basis_linear,vreg_in)
 
 ### Sync reservoir (without training)
 Just input the state variable (dimension nx)
