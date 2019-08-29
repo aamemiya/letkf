@@ -103,7 +103,6 @@ PROGRAM letkf
 ! nature
 !-----------------------------------------------------------------------
 
-
 !  OPEN(10,FILE='nature.dat',FORM='unformatted')
   istat=NF_OPEN('nature.nc',NF_NOWRITE,idnc)
   istat=NF_INQ_VARID(idnc,'v',idvv)
@@ -183,7 +182,7 @@ PROGRAM letkf
     !
     DO i=1,nwindow
 !      READ(11) y4
-      istat=NF_GET_VARA_REAL(idnci,idvv,(/1,it-1+i/),(/nx,1/),y4)
+      istat=NF_GET_VARA_REAL(idnci,idvv,(/1,it-1+i/),(/ny,1/),y4)
       y(:,i) = REAL(y4,r_size)
     END DO
     !
