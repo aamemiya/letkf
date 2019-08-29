@@ -63,7 +63,7 @@ PROGRAM letkf
   INTEGER :: ix
   INTEGER :: ny_loc
   INTEGER :: nbv2
-  CHARACTER(10) :: initfile='init00.nc'
+  CHARACTER(9) :: initfile='init00.nc'
 
   INTEGER :: istat, idnc, iddx, idvx, iddt, idvt, idvv, idvw
   INTEGER :: idnci, idnco, idde, idvvf, idvva ,idvvfm, idvvam, idvba, idvbf
