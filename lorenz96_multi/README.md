@@ -57,8 +57,8 @@ The resultaint file is `DATA/all_02/test/assim.nc`, which contains following var
 
      vf   ### forecast (nx,ne,nt)
      vfm  ### forecast mean (nx,nt)
-     vf   ### analysis (nx,ne,nt)
-     vfm  ### analysis mean (nx,nt)
+     va   ### analysis (nx,ne,nt)
+     vam  ### analysis mean (nx,nt)
      bf   ### (optional) estimated constant bias : first guess (nx,nt)
      ba   ### (optional) estimated constant bias : analysis (nx,nt)
      
