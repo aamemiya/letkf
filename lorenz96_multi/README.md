@@ -53,7 +53,7 @@ Now you are ready to perform a data assimilation experiment with LETKF.
      sh letkf.sh  
 
 An observation type and a letkf experiment name are specified in `letkf.sh`. By default they are `all_02` and `test`.  
-The resultaint file is `DATA/all_02/test/assim.nc`, which contains following variables. 
+The resultaint file is `DATA/all_02/test/assim.nc`, which contains following variables (ne: ensemble size). 
 
      vf   ### forecast (nx,ne,nt)
      vfm  ### forecast mean (nx,nt)
