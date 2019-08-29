@@ -11,6 +11,7 @@ OBS=all_02
 #EXP=nocorr_I80
 #EXP=DdSM
 EXP=reg
+#EXP=test
 
 MONITOR=F
 
@@ -42,27 +43,27 @@ cp $CDIR/letkf${METHOD}.f90 .
 
 if [ "$MONITOR" == "T" ] ;then 
 cp $CDIR/monitor_yspace.f90 .
-$F90 -o letkf SFMT.f90 common.f90 netlib.f common_mtx.f90 common_letkf.f90 lorenz96$VAR.f90 h_ope.f90 letkf${METHOD}.f90 monitor_yspace.f90
+$F90 -o letkf SFMT.f90 common.f90 netlib.f common_mtx.f90 common_letkf.f90 lorenz96$VAR.f90 h_ope.f90 letkf${METHOD}.f90 monitor_yspace.f90 -lnetcdf -lnetcdff
 else
-$F90 -o letkf SFMT.f90 common.f90 netlib.f common_mtx.f90 common_letkf.f90 lorenz96$VAR.f90 h_ope.f90 letkf${METHOD}.f90 
+$F90 -o letkf SFMT.f90 common.f90 netlib.f common_mtx.f90 common_letkf.f90 lorenz96$VAR.f90 h_ope.f90 letkf${METHOD}.f90 -lnetcdf -lnetcdff 
 fi
 
 rm *.mod
 rm *.o
-ln -s $OUTDIR/$OBS/obs.dat .
-ln -s $OUTDIR/spinup/init*.dat .
-ln -s $OUTDIR/nature.dat .
+ln -s $OUTDIR/$OBS/obs.nc .
+ln -s $OUTDIR/spinup/init*.nc .
+ln -s $OUTDIR/nature.nc .
 time ./letkf
 rm -rf $OUTDIR/$OBS/$EXP
 mkdir -p $OUTDIR/$OBS/$EXP
-for FILE in guesmean analmean gues anal infl rmse_t rmse_x biasgues biasanal
+mv assim.nc $OUTDIR/$OBS/$EXP
+for FILE in infl rmse_t rmse_x
 do
 if test -f $FILE.dat
 then
 mv $FILE.dat $OUTDIR/$OBS/$EXP
 fi
 done
-cp $CDIR/*.ctl $OUTDIR/$OBS/$EXP
 
 
 [ "$MONITOR" == "T" ] && mv monitor_obs_*.png $OUTDIR/$OBS/$EXP

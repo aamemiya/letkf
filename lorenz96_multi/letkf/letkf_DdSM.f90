@@ -64,7 +64,14 @@ PROGRAM letkf
   INTEGER :: ix
   INTEGER :: ny_loc
   INTEGER :: nbv2
-  CHARACTER(10) :: initfile='init00.dat'
+  CHARACTER(10) :: initfile='init00.nc'
+
+  INTEGER :: istat, idnc, iddx, idvx, iddt, idvt, idvv, idvw
+  INTEGER :: idnci, idnco, idde, idvvf, idvva ,idvvfm, idvvam, idvba, idvbf
+
+  REAL(r_sngl) :: time
+
+  include 'netcdf.inc'
 !===================! 
 #ifdef MONITOR_YSPACE
   INTEGER,PARAMETER :: nt_monitor_int=nt/20
@@ -106,20 +113,29 @@ PROGRAM letkf
 !-----------------------------------------------------------------------
 ! nature
 !-----------------------------------------------------------------------
-  OPEN(10,FILE='nature.dat',FORM='unformatted')
+
+!  OPEN(10,FILE='nature.dat',FORM='unformatted')
+  istat=NF_OPEN('nature.nc',NF_NOWRITE,idnc)
+  istat=NF_INQ_VARID(idnc,'v',idvv)
   DO i=1,nt
-    READ(10) x4
+    istat=NF_GET_VARA_REAL(idnc,idvv,(/1,i/),(/nx,1/),x4)
+!    READ(10) x4
     xnature(:,i) = REAL(x4,r_size)
   END DO
-  CLOSE(10)
+   istat=NF_CLOSE(idnc)
+! CLOSE(10)
 !-----------------------------------------------------------------------
 ! initial conditions 'initXX.dat'
 !-----------------------------------------------------------------------
   DO i=1,nbv
     WRITE(initfile(5:6),'(I2.2)') i-1
-    OPEN(10,FILE=initfile,FORM='unformatted')
-    READ(10) xf(:,i,1)
-    CLOSE(10)
+    istat=NF_OPEN(initfile,NF_NOWRITE,idnc)
+    istat=NF_INQ_VARID(idnc,'v',idvv)
+!    OPEN(10,FILE=initfile,FORM='unformatted')
+    istat=NF_GET_VARA_REAL(idnc,idvv,(/1,i/),(/nx,1/),x4)
+    xf(:,i,1)=real(x4,r_size)
+!    CLOSE(10)
+    istat=NF_CLOSE(idnc)
   END DO
 !-----------------------------------------------------------------------
 ! Bias initial conditions  = 0
@@ -139,26 +155,53 @@ PROGRAM letkf
   !
   ! input files
   !
-  OPEN(11,FILE='obs.dat',FORM='unformatted')
+!  OPEN(11,FILE='obs.dat',FORM='unformatted')
+  istat=NF_OPEN('obs.nc',NF_NOWRITE,idnci)
+  istat=NF_INQ_VARID(idnci,'vy',idvv)
   !
   ! output files
   !
-  OPEN(90,FILE='guesmean.dat',FORM='unformatted')
-  OPEN(91,FILE='analmean.dat',FORM='unformatted')
-  OPEN(92,FILE='gues.dat',FORM='unformatted')
-  OPEN(93,FILE='anal.dat',FORM='unformatted')
-  OPEN(94,FILE='biasgues.dat',FORM='unformatted')
-  OPEN(95,FILE='biasanal.dat',FORM='unformatted')
+  istat=NF_CREATE('assim.nc',NF_CLOBBER,idnco)
+  istat=NF_DEF_DIM(idnco,'x',nx,iddx)
+  istat=NF_DEF_DIM(idnco,'e',nbv,idde)
+  istat=NF_DEF_DIM(idnco,'t',NF_UNLIMITED,iddt)
+  istat=NF_DEF_VAR(idnco,'x',NF_FLOAT,1,iddx,idvx)
+  istat=NF_DEF_VAR(idnco,'t',NF_FLOAT,1,iddt,idvt)
+  istat=NF_DEF_VAR(idnco,'va',NF_FLOAT,3,(/iddx,idde,iddt/),idvva)
+  istat=NF_DEF_VAR(idnco,'vf',NF_FLOAT,3,(/iddx,idde,iddt/),idvvf)
+  istat=NF_DEF_VAR(idnco,'vam',NF_FLOAT,2,(/iddx,iddt/),idvvam)
+  istat=NF_DEF_VAR(idnco,'vfm',NF_FLOAT,2,(/iddx,iddt/),idvvfm)
+  istat=NF_DEF_VAR(idnco,'ba',NF_FLOAT,2,(/iddx,iddt/),idvba)
+  istat=NF_DEF_VAR(idnco,'bf',NF_FLOAT,2,(/iddx,iddt/),idvbf)
+  istat=NF_ENDDEF(idnco)
+  istat=NF_PUT_VARA_REAL(idnco,idvx,1,nx,(/( real(i), i=1,nx )/))
+
+!  OPEN(90,FILE='guesmean.dat',FORM='unformatted')
+!  OPEN(91,FILE='analmean.dat',FORM='unformatted')
+!  OPEN(92,FILE='gues.dat',FORM='unformatted')
+!  OPEN(93,FILE='anal.dat',FORM='unformatted')
+!  OPEN(94,FILE='biasgues.dat',FORM='unformatted')
+!  OPEN(95,FILE='biasanal.dat',FORM='unformatted')
+
   !>>>
   !>>> LOOP START
   !>>>
   it=1
+  time=0.0
   DO
+    !
+    ! time output
+    ! 
+   do i=1,nwindow
+    time= time + dt
+    istat=NF_PUT_VARA_REAL(idnco,idvt,it,1,real(time,r_sngl))
+   end do
     !
     ! read obs
     !
     DO i=1,nwindow
-      READ(11) y4
+!      READ(11) y4
+      istat=NF_GET_VARA_REAL(idnci,idvv,(/1,it-1+i/),(/nx,1/),y4)
       y(:,i) = REAL(y4,r_size)
     END DO
     !
@@ -193,14 +236,16 @@ PROGRAM letkf
     IF(msw_detailout) THEN
       DO j=1,nwindow
         x4 = xm(:,j)
-        WRITE(90) x4
+!        WRITE(90) x4
+        istat=NF_PUT_VARA_REAL(idnco,idvvfm,(/1,it-1+j/),(/nx,1/),x4)
         DO i=1,nbv
           x4 = xf(:,i,j)
-          WRITE(92) x4
+!          WRITE(92) x4
+        istat=NF_PUT_VARA_REAL(idnco,idvvf,(/1,i,it-1+j/),(/nx,1,1/),x4)
         END DO
       END DO
-        x4 = bf
-        WRITE(94) x4
+      x4=bf
+      istat=NF_PUT_VARA_REAL(idnco,idvbf,(/1,it/),(/nx,1/),x4)
     END IF
    
     !---------------
@@ -315,16 +360,16 @@ PROGRAM letkf
     IF(msw_detailout) THEN
       DO n=1,nwindow
         x4 = xm(:,n)
-        WRITE(91) x4
+!        WRITE(91) x4
+        istat=NF_PUT_VARA_REAL(idnco,idvvam,(/1,it-1+n/),(/nx,1/),x4)
         DO i=1,nbv
           x4 = xa(:,i,n)
-          WRITE(93) x4
+!          WRITE(93) x4
+        istat=NF_PUT_VARA_REAL(idnco,idvva,(/1,i,it-1+n/),(/nx,1,1/),x4)
         END DO
       END DO
-
-        x4 = ba
-        WRITE(95) x4
-
+      x4=ba
+      istat=NF_PUT_VARA_REAL(idnco,idvba,(/1,it/),(/nx,1/),x4)
     END IF
 
     !
@@ -388,13 +433,16 @@ PROGRAM letkf
   !<<<
   !<<< LOOP END
   !<<<
-  CLOSE(11)
-  CLOSE(90)
-  CLOSE(91)
-  CLOSE(92)
-  CLOSE(93)
-  CLOSE(94)
-  CLOSE(95)
+!  CLOSE(11)
+!  CLOSE(90)
+!  CLOSE(91)
+!  CLOSE(92)
+!  CLOSE(93)
+!  CLOSE(94)
+!  CLOSE(95)
+  istat=NF_CLOSE(idnci)
+  istat=NF_CLOSE(idnco)
+
 
   OPEN(10,FILE='infl.dat',FORM='unformatted')
   DO i=1,nt
