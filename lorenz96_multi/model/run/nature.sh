@@ -17,11 +17,9 @@ cp $COMDIR/SFMT.f90 .
 cp $COMDIR/common.f90 .
 cp $L96DIR/model/lorenz96${VAR}.f90 .
 cp $L96DIR/model/run/nature.f90 .
-$F90 -o nature SFMT.f90 common.f90 lorenz96${VAR}.f90 nature.f90
+$F90 -o nature SFMT.f90 common.f90 lorenz96${VAR}.f90 nature.f90 -lnetcdf -lnetcdff -CU -CB -traceback 
 rm *.mod
 rm *.o
-ln -s $OUTDIR/spinup/init_nature.dat fort.10
+ln -s $OUTDIR/spinup/init_nature.nc .
 time ./nature
-mv fort.90 $OUTDIR/nature.dat
-mv fort.91 $OUTDIR/nature_y.dat
-cp $CDIR/nature.ctl $OUTDIR
+mv nature.nc $OUTDIR/

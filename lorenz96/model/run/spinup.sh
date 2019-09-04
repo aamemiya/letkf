@@ -1,7 +1,7 @@
 #!/bin/sh
-set -e
+#set -e
 MEM=20
-F90=pgf90
+F90=ifort
 #ORO='_oro'
 ORO=
 CDIR=`pwd`
@@ -19,12 +19,12 @@ cp $COMDIR/SFMT.f90 .
 cp $COMDIR/common.f90 .
 cp $L96DIR/model/lorenz96$ORO.f90 .
 cp $L96DIR/model/run/spinup.f90 .
-$F90 -o spinup SFMT.f90 common.f90 lorenz96$ORO.f90 spinup.f90
+$F90 -o spinup SFMT.f90 common.f90 lorenz96$ORO.f90 spinup.f90 -lnetcdf -lnetcdff
 rm *.mod
 rm *.o
 time ./spinup
 mkdir -p $OUTDIR
-mv fort.90 $OUTDIR/init.dat
+mv init.nc $OUTDIR/init.nc
 I=0
 while test $I -lt $MEM
 do
@@ -33,7 +33,7 @@ then
 I=0$I
 fi
 time ./spinup
-mv fort.90 $OUTDIR/init$I.dat
+mv init.nc $OUTDIR/init$I.nc
 I=`expr $I + 1`
 done
 

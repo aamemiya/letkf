@@ -2,6 +2,10 @@
 
 Lorenz96 model coupled with smaller-scale Lorenz96 model("unresolved processes")
 
+## NetCDF I/O
+[NetCDF](https://www.unidata.ucar.edu/software/netcdf/) is used for Input/Output in this branch. 
+
+
 ## Getting started
 The main codes are written in Fortran90.  
 To exec a job, use a shell script in which all the necessary processes (compilation, link, execution, copying input and output data) are wrapped.  
@@ -49,15 +53,15 @@ Now you are ready to perform a data assimilation experiment with LETKF.
      sh letkf.sh  
 
 An observation type and a letkf experiment name are specified in `letkf.sh`. By default they are `all_02` and `test`.  
-The following resultaint files will appear in a directory `DATA/all_02/test/`. 
+The resultaint file is `DATA/all_02/test/assim.nc`, which contains following variables (ne: ensemble size). 
 
-     analmean.dat  
-     guesmean.dat  
-     anal.dat  
-     gues.dat 
-     rmse_x.dat  
-     rmse_t.dat
-
+     vf   ### forecast (nx,ne,nt)
+     vfm  ### forecast mean (nx,nt)
+     va   ### analysis (nx,ne,nt)
+     vam  ### analysis mean (nx,nt)
+     bf   ### (optional) estimated constant bias : first guess (nx,nt)
+     ba   ### (optional) estimated constant bias : analysis (nx,nt)
+     
 ### Data Assimilation with LETKF + bias correction
 modify `letkf.sh` to use LETKF with simple bias correctioon. There are two methods available.  
 -letkf_DdSM.f90 : Simple iterative method assuming constant bias (Dee and da Silva, 1998)   
@@ -65,21 +69,6 @@ modify `letkf.sh` to use LETKF with simple bias correctioon. There are two metho
 
 ### Reservoir computing
 Try reservoir computing in the same way as in Lorenz63 model.
-
-### Visualization
-
-For quicklook, the easiest way is to use [GrADS](http://cola.gmu.edu/grads/) (The Grid Analysis and Display System).   
-Some ctl files are prepared in the same directory as data files.  
-
-Other languages or tools may be more suitable for analysing data. Reading the data with fortran is straightforward. 
-When you read data with other languages, be sure that there are buffer spaces in sequential data records as follows.   
-
-     4 byte buffer 
-     4*nx byte data array (t=1)
-     4 byte buffer
-     4 byte buffer 
-     4*nx byte data array (t=2)
-     4 byte array
      
 ## Changing configurations
 

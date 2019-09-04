@@ -28,3 +28,7 @@ lorenz63/tmp
 lorenz63/DATA
 KS/tmp
 KS/DATA
+
+.ipynb_checkpoints/
+analysis.tfrecord
+forecast.tfrecord
