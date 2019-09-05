@@ -18,3 +18,6 @@ parameter_list['log_freq'] = 5
 parameter_list['early_stop_patience'] = 5
 parameter_list['num_epochs_checkpoint'] = 2
 parameter_list['summery_freq'] = 1
+
+parameter_list['tfrecord_analysis'] = './analysis.tfrecord'
+parameter_list['tfrecord_forecast'] = './forecast'

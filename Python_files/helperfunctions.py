@@ -5,23 +5,23 @@ import time
 import math
 
 #For creating locality for individual state variable
-def locality_creator(init_dataset):
+def locality_creator(init_dataset, locality_range, xlocal):
     
-    output_dataset = np.zeros((init_dataset.shape[0], init_dataset.shape[1], parameter_list['locality']))
-    radius = int(parameter_list['locality'] / 2)
+    output_dataset = np.zeros((init_dataset.shape[0], init_dataset.shape[1], locality_range))
+    radius = int(locality_range / 2)
     
-    locality = np.linspace(-radius, radius, parameter_list['locality'])
-    locality = np.true_divide(locality, parameter_list['xlocal'])
+    locality = np.linspace(-radius, radius, locality_range)
+    locality = np.true_divide(locality, xlocal)
     locality = np.power(locality, 2)
     locality = np.exp((-1/2) * locality)
     
     for i in range(init_dataset.shape[1]):
         start = i - radius
         stop = i + radius
-        index = np.linspace(start,stop,parameter_list['locality'], dtype='int')
+        index = np.linspace(start,stop,locality_range, dtype='int')
         if stop >= init_dataset.shape[1]:
             stop2 = (stop + 1)%init_dataset.shape[1]
-            index[:-stop2] = np.linspace(start,analysis_init.shape[1]-1,analysis_init.shape[1]-start, dtype='int')
+            index[:-stop2] = np.linspace(start,init_dataset.shape[1]-1,init_dataset.shape[1]-start, dtype='int')
             index[-stop2:] = np.arange(0,stop2,1,dtype='int')
         output_dataset[:,i,:] = init_dataset[:,index]
 
@@ -52,10 +52,10 @@ def _serialize_tensor(value):
     return tf.io.serialize_tensor(value)
 
 #For writing data to the TFRecord file
-def write_TFRecord(filename, dataset):
+def write_TFRecord(filename, dataset, time_splits):
     with tf.io.TFRecordWriter(filename) as writer:
         for i in range(dataset.shape[0]):
-            dataset_splits = split_sequences(dataset[i],parameter_list['time_splits'])
+            dataset_splits = split_sequences(dataset[i], time_splits)
             for j in range(dataset_splits.shape[0]):
                 data = dataset_splits[j]
                 serial_string = _serialize_tensor(data)

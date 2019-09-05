@@ -8,16 +8,6 @@ import helperfunctions as helpfunc
 import network_arch as net
 
 def training(parameter_list):
-    #Getting the NetCDF files
-    root_grp = Dataset(parameter_list['netCDf_loc'], "r", format="NETCDF4")
-
-    #Extrating the datasets
-    analysis_init = root_grp["vam"]
-    forecast_init = root_grp["vfm"]
-
-    #Creation of datasets for training and validation
-    analysis_dataset = helpfunc.truth_label_creator(analysis_init)
-    forecast_dataset = helpfunc.locality_creator(forecast_init)
 
     #Reading the TFRecord files
     anal_file = helpfunc.read_TFRecord('analysis.tfrecord')
