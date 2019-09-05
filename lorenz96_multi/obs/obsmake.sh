@@ -1,16 +1,15 @@
 #!/bin/sh
 #set -e
 ORO=
-OBSNAME=all_10
+OBSNAME=all_02
 F90="ifort"
-CONFIG=X40F08
 CDIR=`pwd`
 cd ..
 L96DIR=`pwd`
 cd ..
 ENKFDIR=`pwd`
 COMDIR=$ENKFDIR/common
-OUTDIR=$L96DIR/DATA/$CONFIG
+OUTDIR=$L96DIR/DATA
 WKDIR=$L96DIR/tmp
 rm -rf $WKDIR
 mkdir -p $WKDIR

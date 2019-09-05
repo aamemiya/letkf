@@ -32,7 +32,7 @@ MODULE lorenz96
   PUBLIC :: tinteg_rk4, TL_tinteg_rk4, TL_tinteg_rk4_x9out, AD_tinteg_rk4,&
           & tinteg_rk4_ptbmtx, TL_tinteg_rk4_ptbmtx
 
-  INTEGER,PARAMETER,PUBLIC :: nx=40          ! number of grid points
+  INTEGER,PARAMETER,PUBLIC :: nx=8          ! number of grid points
   REAL(r_size),SAVE,PUBLIC :: dt=0.005d0    ! time of one time step
   REAL(r_size),SAVE,PUBLIC :: force=8.0d0   ! F term
   REAL(r_size),SAVE,PUBLIC :: oneday=0.2d0  ! time for one day

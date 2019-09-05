@@ -1,17 +1,16 @@
 #!/bin/sh
 #set -e
 VAR=_biased
-METHOD=
+#METHOD=
 #METHOD=_DdSM
-#METHOD=_reg
-CONFIG=X40F08
-OBS=all_10
+METHOD=_reg
+OBS=all_02
 #EXP=M20L30I20
 #EXP=M20L30I20_A80NB99
 #EXP=nocorr
-EXP=nocorr_I12
+#EXP=nocorr_I80
 #EXP=DdSM
-#EXP=reg
+EXP=reg
 #EXP=test
 
 MONITOR=F
@@ -28,7 +27,7 @@ L96DIR=`pwd`
 cd ..
 ENKFDIR=`pwd`
 COMDIR=$ENKFDIR/common
-OUTDIR=$L96DIR/DATA/$CONFIG
+OUTDIR=$L96DIR/DATA
 WKDIR=$L96DIR/tmp
 rm -rf $WKDIR
 mkdir -p $WKDIR

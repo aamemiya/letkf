@@ -3,14 +3,13 @@
 MEM=20
 F90=ifort
 VAR=_biased
-CONFIG=X40F14
 CDIR=`pwd`
 cd ../..
 L96DIR=`pwd`
 cd ..
 ENKFDIR=`pwd`
 COMDIR=$ENKFDIR/common
-OUTDIR=$L96DIR/DATA/${CONFIG}/spinup
+OUTDIR=$L96DIR/DATA/spinup
 WKDIR=$L96DIR/tmp
 rm -rf $WKDIR
 mkdir -p $WKDIR
