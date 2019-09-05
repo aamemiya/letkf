@@ -32,3 +32,5 @@ KS/DATA
 .ipynb_checkpoints/
 analysis.tfrecord
 forecast.tfrecord
+*.h5
+*.png
