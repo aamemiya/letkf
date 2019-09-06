@@ -102,8 +102,8 @@ def training(parameter_list):
             print('Training acc over epoch: %s \n' % (float(train_acc)))
 
             if not(epoch % parameter_list['summery_freq']):
-                tf.summary.scalar('Loss_total', loss, step= epoch)
-                tf.summary.scalar('Train_RMSE', train_acc, step= epoch)
+                tf.summary.scalar('Loss_total', loss, step= (epoch + 1))
+                tf.summary.scalar('Train_RMSE', train_acc, step= (epoch + 1))
 
             # Reset training metrics at the end of each epoch
             metric_train.reset_states()
@@ -126,8 +126,8 @@ def training(parameter_list):
             print('Seen so far: %s samples \n' % ((step + 1) * parameter_list['batch_size']))
             
             if not(epoch % parameter_list['summery_freq']):
-                tf.summary.scalar('Loss_total_val', val_loss, step= epoch)
-                tf.summary.scalar('Val_RMSE', metric_val.result(), step= epoch)
+                tf.summary.scalar('Loss_total_val', val_loss, step= (epoch + 1))
+                tf.summary.scalar('Val_RMSE', metric_val.result(), step= (epoch + 1))
                 
             # Reset training metrics at the end of each epoch
             metric_val.reset_states()

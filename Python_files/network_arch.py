@@ -3,7 +3,7 @@ import tensorflow as tf
 
 #Model defination
 def rnn_model(parameter_list):
-    net_input = tf.keras.Input(shape=(parameter_list['time_splits'],
+    net_input = tf.keras.Input(shape=(None,
                             parameter_list['locality']),
                             name='INPUT')
 
