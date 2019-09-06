@@ -34,8 +34,9 @@ parameter_list['unroll_lstm'] = False
 
 #Training related settings
 parameter_list['learning_rate'] = 1e-3
-parameter_list['checkpoint_dir'] = './checkpoint'
-parameter_list['log_dir'] = parameter_list['checkpoint'] + '/log'
+parameter_list['experiment_dir'] = "./exper"
+parameter_list['checkpoint_dir'] = parameter_list['experiment_dir'] + '/checkpoint'
+parameter_list['log_dir'] = parameter_list['experiment_dir'] + '/log'
 parameter_list['max_checkpoint_keep'] = 4
 parameter_list['epochs'] = 5
 parameter_list['log_freq'] = 5
@@ -46,17 +47,17 @@ parameter_list['global_epoch'] = 0
 
 if not(os.path.isfile(parameter_list['tfrecord_analysis']) and os.path.isfile(parameter_list['tfrecord_forecast'])):
     if not(os.path.isfile(parameter_list['netCDf_loc'])):
-        print("NetCDF file doesn't exist for tfrecord creation, terminating....")
+        print("\nNetCDF file doesn't exist for tfrecord creation, terminating....\n")
         sys.exit()
     else:
-        print("Creating TFrecord.")
+        print("\nCreating TFrecord.\n")
         helpfunc.tfrecord(parameter_list)
 else:
-    print('TFrecord file exists. Using them for training.')
+    print('\nTFrecord file exists. Using them for training.\n')
 
-if not os.path.exists(parameter_list['checkpoint_dir']):
+if not os.path.exists(parameter_list['experiment_dir']):
     os.makedirs(parameter_list['log_dir'])
-    os.makedirs(parameter_list['checkpoint_dir'])
+    os.mkdir(parameter_list['checkpoint_dir'])
 
 csv_name = parameter_list['checkpoint_dir'] + '/params.csv'
 

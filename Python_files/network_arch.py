@@ -17,7 +17,7 @@ def rnn_model(parameter_list):
                             unroll = parameter_list['unroll_lstm'],
                             return_sequences=True)(net_input)
 
-    x = tf.keras.layers.Dense(units=parameter_list['net_output'],
+    output = tf.keras.layers.Dense(units=parameter_list['net_output'],
                             kernel_regularizer = tf.keras.regularizers.l2(parameter_list['l2_regu']))(x)
     
     return tf.keras.Model(net_input, output, name='RNN')

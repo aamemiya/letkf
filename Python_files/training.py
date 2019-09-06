@@ -14,8 +14,8 @@ def training(parameter_list):
     fore_file = helpfunc.read_TFRecord(parameter_list['tfrecord_forecast'])
 
     #Parsing the dataset
-    anal_file = anal_file.map(_parse_tensor)
-    fore_file = fore_file.map(_parse_tensor)
+    anal_file = anal_file.map(helpfunc._parse_tensor)
+    fore_file = fore_file.map(helpfunc._parse_tensor)
 
     #Zipping the files
     dataset = tf.data.Dataset.zip((fore_file, anal_file))
@@ -59,6 +59,7 @@ def training(parameter_list):
     global_step = 0
     global_step_val = 0
     val_min = 0
+    val_loss_min = 100
 
     #Starting training
     with summary_writer.as_default():
@@ -131,11 +132,13 @@ def training(parameter_list):
             # Reset training metrics at the end of each epoch
             metric_val.reset_states()
 
-            checkpoint.epoch.assign_add(1)
-            if int(checkpoint.epoch + 1) % parameter_list['num_epochs_checkpoint'] == 0:
-                save_path = manager.save()
-                print("Saved checkpoint for epoch {}: {}".format(int(checkpoint.epoch), save_path))
-                print("loss {:1.2f}".format(loss.numpy()))
+            if val_loss_min > val_loss:
+                val_loss_min = val_loss
+                checkpoint.epoch.assign_add(1)
+                if int(checkpoint.epoch + 1) % parameter_list['num_epochs_checkpoint'] == 0:
+                    save_path = manager.save()
+                    print("Saved checkpoint for epoch {}: {}".format(int(checkpoint.epoch), save_path))
+                    print("loss {:1.2f}".format(loss.numpy()))
 
             if math.isnan(val_acc):
                 print('Breaking out as the validation loss is nan')
@@ -150,8 +153,8 @@ def training(parameter_list):
                             val_min = val_acc
                         else:
                             print('Breaking loop as validation accuracy not improving')
-                            save_path = manager.save()
-                            print("Saved checkpoint for epoch {}: {}".format(int(checkpoint.epoch), save_path))
+                            # save_path = manager.save()
+                            # print("Saved checkpoint for epoch {}: {}".format(int(checkpoint.epoch), save_path))
                             print("loss {:1.2f}".format(loss.numpy()))
                             break
 
