@@ -21,7 +21,7 @@ parameter_list['tfrecord_forecast'] = './forecast.tfrecord'
 parameter_list['experiment_dir'] = "./exper"
 parameter_list['checkpoint_dir'] = parameter_list['experiment_dir'] + '/checkpoint'
 parameter_list['log_dir'] = parameter_list['experiment_dir'] + '/log'
-parameter_list['model_loc'] = './model.h5'
+parameter_list['model_loc'] = parameter_list['experiment_dir'] + '/model.json'
 
 if not(os.path.isfile(parameter_list['tfrecord_analysis']) and os.path.isfile(parameter_list['tfrecord_forecast'])):
     if not(os.path.isfile(parameter_list['netCDf_loc'])):
@@ -53,7 +53,7 @@ if not os.path.exists(parameter_list['experiment_dir']):
     #Training related settings
     parameter_list['learning_rate'] = 1e-3
     parameter_list['max_checkpoint_keep'] = 4
-    parameter_list['epochs'] = 5
+    parameter_list['epochs'] = 2
     parameter_list['log_freq'] = 5
     parameter_list['early_stop_patience'] = 5
     parameter_list['num_epochs_checkpoint'] = 2

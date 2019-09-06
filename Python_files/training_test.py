@@ -3,6 +3,8 @@ import numpy as np
 from netCDF4 import Dataset
 import time
 import math
+import os
+import sys
 
 import helperfunctions as helpfunc
 import network_arch as net
@@ -100,7 +102,6 @@ def train(parameter_list, model, checkpoint, manager, summary_writer, optimizer)
                     
             val_acc = metric_val.result()
             print('Validation acc over epoch: %s \n' % (float(val_acc)))
-            print('Seen so far: %s samples \n' % ((step + 1) * parameter_list['batch_size']))
             
             if not(epoch % parameter_list['summery_freq']):
                 tf.summary.scalar('Loss_total_val', val_loss, step= (epoch + 1))
@@ -130,19 +131,26 @@ def train(parameter_list, model, checkpoint, manager, summary_writer, optimizer)
                             val_min = val_acc
                         else:
                             print('Breaking loop as validation accuracy not improving')
-                            # save_path = manager.save()
-                            # print("Saved checkpoint for epoch {}: {}".format(int(checkpoint.epoch), save_path))
                             print("loss {:1.2f}".format(loss.numpy()))
                             break
 
             print('Time for epoch (in minutes): %s' %((time.time() - start_time)/60))
+
+    model_json = model.to_json()
+
+    helpfunc.write_to_json(parameter_list['model_loc'], model_json)
 
     return (epoch + 1)
 
 def traintest(parameter_list, flag='train'):
 
     #Get the Model
-    model = net.rnn_model(parameter_list)
+    if os.path.exists(parameter_list['model_loc']):
+        print('\nLoading saved model...\n')
+        j_string = helpfunc.read_json(parameter_list['model_loc'])
+        model = tf.keras.models.model_from_json(j_string)
+    else:
+        model = net.rnn_model(parameter_list)
 
     #Defining Model compiling parameters
     learning_rate = parameter_list['learning_rate']

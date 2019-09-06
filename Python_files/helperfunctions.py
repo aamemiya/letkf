@@ -96,3 +96,13 @@ def tfrecord(parameter_list):
 
     helpfunc.write_TFRecord(parameter_list['tfrecord_analysis'], analysis_dataset, parameter_list['time_splits'])
     helpfunc.write_TFRecord(parameter_list['tfrecord_forecast'], forecast_dataset, parameter_list['time_splits'])
+
+def write_to_json(loc, model):
+    with open(loc, 'w') as json_file:
+        json_file.write(model)
+
+def read_json(loc):
+    json_file = open(loc, 'r')
+    content = json_file.read()
+    json_file.close()
+    return content
