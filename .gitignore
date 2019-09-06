@@ -34,3 +34,6 @@ KS/DATA
 *.tfrecord
 *.h5
 *.png
+KS/
+*log/*
+*checkpoint*
