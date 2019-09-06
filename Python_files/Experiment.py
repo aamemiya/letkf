@@ -6,7 +6,7 @@ import os
 import sys
 
 import helperfunctions as helpfunc
-import training
+import training_test as tntt
 
 #Parameter List
 parameter_list = {}
@@ -21,6 +21,7 @@ parameter_list['tfrecord_forecast'] = './forecast.tfrecord'
 parameter_list['experiment_dir'] = "./exper"
 parameter_list['checkpoint_dir'] = parameter_list['experiment_dir'] + '/checkpoint'
 parameter_list['log_dir'] = parameter_list['experiment_dir'] + '/log'
+parameter_list['model_loc'] = './model.h5'
 
 if not(os.path.isfile(parameter_list['tfrecord_analysis']) and os.path.isfile(parameter_list['tfrecord_forecast'])):
     if not(os.path.isfile(parameter_list['netCDf_loc'])):
@@ -66,8 +67,9 @@ else:
         parameter_list = helpfunc.read_dataframe(csv_name)
     else:
         print('\nNo CSV file exists at {}. Exiting....\n'.format(csv_name))
+        sys.exit()
 
-parameter_list['global_epoch'] = training.training(copy.deepcopy(parameter_list))
+parameter_list['global_epoch'] = tntt.traintest(copy.deepcopy(parameter_list))
 params_dataframe = pd.DataFrame(parameter_list, index=[1])
 
 helpfunc.write_dataframe(params_dataframe, csv_name)

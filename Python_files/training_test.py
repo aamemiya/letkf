@@ -7,7 +7,7 @@ import math
 import helperfunctions as helpfunc
 import network_arch as net
 
-def training(parameter_list):
+def train(parameter_list, model, checkpoint, manager, summary_writer, optimizer):
 
     #Reading the TFRecord files
     anal_file = helpfunc.read_TFRecord(parameter_list['tfrecord_analysis'])
@@ -27,33 +27,10 @@ def training(parameter_list):
     #Creating Train and Validation datasets
     train_dataset, val_dataset = helpfunc.train_val_creator(dataset, parameter_list['val_size'])
 
-    #Get the Model
-    model = net.rnn_model(parameter_list)
-
-    #Defining Model compiling parameters
-    learning_rate = parameter_list['learning_rate']
-    optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate, amsgrad=True)
-
     #Loss and metric
     loss_func = tf.keras.losses.MeanSquaredError(name='Loss: MSE')
     metric_train = tf.keras.metrics.RootMeanSquaredError(name='T_RMSE')
     metric_val = tf.keras.metrics.RootMeanSquaredError(name='V_RMSE')
-
-    #Creating summary writer
-    summary_writer = tf.summary.create_file_writer(logdir= parameter_list['log_dir'])
-
-    #Creating checkpoint instance
-    checkpoint = tf.train.Checkpoint(epoch = tf.Variable(0), optimizer = optimizer, model = model)
-    save_directory = parameter_list['checkpoint_dir']
-    manager = tf.train.CheckpointManager(checkpoint, directory= save_directory, 
-                                        max_to_keep= parameter_list['max_checkpoint_keep'])
-    checkpoint.restore(manager.latest_checkpoint)
-
-    #Checking if previous checkpoint exists
-    if manager.latest_checkpoint:
-        print("Restored from {}".format(manager.latest_checkpoint))
-    else:
-        print("Initializing from scratch.")
         
     #Initialing training variables
     global_step = 0
@@ -161,3 +138,46 @@ def training(parameter_list):
             print('Time for epoch (in minutes): %s' %((time.time() - start_time)/60))
 
     return (epoch + 1)
+
+def traintest(parameter_list, flag='train'):
+
+    #Get the Model
+    model = net.rnn_model(parameter_list)
+
+    #Defining Model compiling parameters
+    learning_rate = parameter_list['learning_rate']
+    optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate, amsgrad=True)
+
+    #Creating summary writer
+    summary_writer = tf.summary.create_file_writer(logdir= parameter_list['log_dir'])
+
+    #Creating checkpoint instance
+    checkpoint = tf.train.Checkpoint(epoch = tf.Variable(0), optimizer = optimizer, model = model)
+    save_directory = parameter_list['checkpoint_dir']
+    manager = tf.train.CheckpointManager(checkpoint, directory= save_directory, 
+                                        max_to_keep= parameter_list['max_checkpoint_keep'])
+    checkpoint.restore(manager.latest_checkpoint)
+
+    #Checking if previous checkpoint exists
+    if manager.latest_checkpoint:
+        print("Restored from {}".format(manager.latest_checkpoint))
+
+        # if flag == 'test':
+        #     print('Starting testing...')
+        #     return test(parameter_list, model)
+
+        if flag == 'train':
+            print('Starting training for a restored point... \n')
+            return train(parameter_list, model, checkpoint, manager, summary_writer, optimizer)
+        
+    else:
+        print("No checkpoint exists.")
+        
+        # if flag == 'test':
+        #     print('Cannot test as no checkpoint exists. Exiting...')
+        #     return parameter_list
+        
+        if flag == 'train':
+            print('Initializing from scratch... \n')
+            parameter_list = train(parameter_list, model, checkpoint, manager, summary_writer, optimizer)
+            return parameter_list
