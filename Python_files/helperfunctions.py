@@ -3,6 +3,7 @@ import numpy as np
 from netCDF4 import Dataset
 import time
 import math
+import pandas as pd
 
 #For creating locality for individual state variable
 def locality_creator(init_dataset, locality_range, xlocal):
@@ -71,8 +72,27 @@ def _parse_tensor(value):
     return tf.io.parse_tensor(value, out_type=tf.float32)
 
 #For creating Train and Validation datasets
-
 def train_val_creator(dataset, val_size):
     val_dataset = dataset.take(val_size)
     train_dataset = dataset.skip(val_size)
     return train_dataset, val_dataset
+
+def read_dataframe(filename):
+    return pd.read_csv(filename).to_dict(orient= 'records')[0]
+
+def write_dataframe(dataframe, filename):   
+    dataframe.to_csv(filename)
+
+def tfrecord(parameter_list):
+    #Getting the NetCDF files
+    root_grp = Dataset(parameter_list['netCDf_loc'], "r", format="NETCDF4")
+
+    #Extrating the datasets
+    analysis_init = root_grp["vam"]
+    forecast_init = root_grp["vfm"]
+
+    analysis_dataset = helpfunc.truth_label_creator(analysis_init)
+    forecast_dataset = helpfunc.locality_creator(forecast_init, parameter_list['locality'], parameter_list['xlocal'])
+
+    helpfunc.write_TFRecord(parameter_list['tfrecord_analysis'], analysis_dataset, parameter_list['time_splits'])
+    helpfunc.write_TFRecord(parameter_list['tfrecord_forecast'], forecast_dataset, parameter_list['time_splits'])

@@ -97,6 +97,7 @@ def training(parameter_list):
                     
             # Display metrics at the end of each epoch.
             train_acc = metric_train.result()
+            print('\nTraining loss at epoch end {}'.format(loss))
             print('Training acc over epoch: %s \n' % (float(train_acc)))
 
             if not(epoch % parameter_list['summery_freq']):
@@ -118,10 +119,10 @@ def training(parameter_list):
 
                 if (step_val % parameter_list['log_freq']) == 0:
                     print('Validation loss (for one batch) at step %s: %s' % (step_val, float(val_loss)))
-                    print('Seen so far: %s samples' % ((step + 1) * parameter_list['batch_size']))
                     
             val_acc = metric_val.result()
             print('Validation acc over epoch: %s \n' % (float(val_acc)))
+            print('Seen so far: %s samples \n' % ((step + 1) * parameter_list['batch_size']))
             
             if not(epoch % parameter_list['summery_freq']):
                 tf.summary.scalar('Loss_total_val', val_loss, step= epoch)
@@ -155,3 +156,5 @@ def training(parameter_list):
                             break
 
             print('Time for epoch (in minutes): %s' %((time.time() - start_time)/60))
+
+    return (epoch + 1)
