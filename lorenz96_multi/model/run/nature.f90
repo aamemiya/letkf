@@ -4,7 +4,7 @@ PROGRAM nature
 
   IMPLICIT NONE
 
-  INTEGER,PARAMETER :: ndays=36000 ! 10 years
+  INTEGER,PARAMETER :: ndays=3600 ! 10 years
   REAL(r_size) :: xy(ntot)
   REAL(r_sngl) :: x4(nx),y4(nxx)
   INTEGER :: i,ktoneday
@@ -17,7 +17,7 @@ PROGRAM nature
   include 'netcdf.inc'
 
   dt=0.005d0
-  force=18.0d0
+  force=8.0d0
   oneday=0.2d0
 
   ktoneday = INT(oneday/dt)
@@ -58,7 +58,7 @@ PROGRAM nature
   istat=NF_PUT_VARA_REAL(idnc,idvv,(/1,i/),(/nx,1/),x4)
     CALL tinteg_rk4(ktcyc,xy,xy)
   time=time+real(dt)
-    if (mod(i,ndays*4/100).eq.0) WRITE(*,*) i,'/',ndays*4,x4(1),x4(nx/2)
+    if (mod(i,1000).eq.0) WRITE(*,*) i,x4(1:3)
   END DO
 
   istat=NF_CLOSE(idnc)

@@ -10,7 +10,7 @@ PROGRAM letkf
   IMPLICIT NONE
 
   LOGICAL,PARAMETER :: msw_detailout=.TRUE.
-  INTEGER,PARAMETER :: ndays=360*100
+  INTEGER,PARAMETER :: ndays=360*5
   INTEGER,PARAMETER :: nt=ndays*4
   INTEGER,PARAMETER :: nwindow=1 ! time window for 4D-LETKF
   INTEGER,PARAMETER :: nspinup=360*3*4 ! time steps for spin-up
@@ -25,15 +25,15 @@ PROGRAM letkf
   REAL(r_size) :: sa=1.0d0 ! adaptive localization parameter
   REAL(r_size) :: sb=1.0d0 ! adaptive localization parameter
 !  REAL(r_size),PARAMETER :: msw_infl=1.20d0 ! inflation mode switch
-  REAL(r_size),PARAMETER :: msw_infl=1.2d0 ! inflation mode switch
+  REAL(r_size),PARAMETER :: msw_infl=1.80d0 ! inflation mode switch
 ! msw_infl : inflation mode switch
 !  < 0 : adaptive inflation
 !  > 0 : fixed inflation value
   REAL(r_size) :: parm_infl(nx,nt) ! inflation parameter
   REAL(r_size) :: parm
   REAL(r_size) :: xmaxloc
-  REAL(r_size) :: obserr=1.0d0
-!  REAL(r_size) :: obserr=0.2d0
+!  REAL(r_size) :: obserr=1.0d0
+  REAL(r_size) :: obserr=0.2d0
   REAL(r_sngl) :: y4(ny)
   REAL(r_sngl) :: x4(nx)
   REAL(r_size) :: xnature(nx,nt)
@@ -170,7 +170,6 @@ PROGRAM letkf
   it=1
   time=0.0
   DO
-   if (mod(it,1000).eq.0) write(*,*) it,' / ',nt
     !
     ! time output
     ! 

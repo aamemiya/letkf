@@ -13,7 +13,7 @@ PROGRAM spinup
   include 'netcdf.inc'
 
   dt=0.005d0
-  force=14.0d0
+  force=8.0d0
   oneday=0.2d0
 
   ktoneday = INT(oneday/dt)
