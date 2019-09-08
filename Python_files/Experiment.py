@@ -63,7 +63,7 @@ if not os.path.exists(parameter_list['experiment_dir']):
     parameter_list['num_epochs_checkpoint'] = 1
     parameter_list['summery_freq'] = 1
     parameter_list['global_epoch'] = 0
-    parameter_list['batch_size'] = 250
+    parameter_list['global_batch_size'] = 500
     parameter_list['val_size'] = 2
     parameter_list['lr_decay_steps'] = 30000
 
