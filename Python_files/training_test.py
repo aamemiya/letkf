@@ -36,7 +36,6 @@ def train(parameter_list, model, checkpoint, manager, summary_writer, optimizer)
         
     #Initialing training variables
     global_step = 0
-    global_step_val = 0
     val_min = 0
     val_loss_min = 100
 
@@ -48,6 +47,7 @@ def train(parameter_list, model, checkpoint, manager, summary_writer, optimizer)
         for epoch in range(epochs):
 
             start_time = time.time()
+            parameter_list['global_epoch'] += 1
 
             print('\nStart of epoch %d' %(epoch+1))
 
@@ -81,16 +81,14 @@ def train(parameter_list, model, checkpoint, manager, summary_writer, optimizer)
             print('Training acc over epoch: %s \n' % (float(train_acc)))
 
             if not(epoch % parameter_list['summery_freq']):
-                tf.summary.scalar('Loss_total', loss, step= (epoch + 1))
-                tf.summary.scalar('Train_RMSE', train_acc, step= (epoch + 1))
+                tf.summary.scalar('Loss_total', loss, step= parameter_list['global_epoch'])
+                tf.summary.scalar('Train_RMSE', train_acc, step= parameter_list['global_epoch'])
 
             # Reset training metrics at the end of each epoch
             metric_train.reset_states()
 
             #Code for validation at the end of each epoch
             for step_val, (local_forecast_val, analysis_val) in enumerate(val_dataset):
-
-                global_step_val += 1
 
                 pred_analysis_val = model(local_forecast_val)
 
@@ -104,8 +102,8 @@ def train(parameter_list, model, checkpoint, manager, summary_writer, optimizer)
             print('Validation acc over epoch: %s \n' % (float(val_acc)))
             
             if not(epoch % parameter_list['summery_freq']):
-                tf.summary.scalar('Loss_total_val', val_loss, step= (epoch + 1))
-                tf.summary.scalar('Val_RMSE', metric_val.result(), step= (epoch + 1))
+                tf.summary.scalar('Loss_total_val', val_loss, step= parameter_list['global_epoch'])
+                tf.summary.scalar('Val_RMSE', metric_val.result(), step= parameter_list['global_epoch'])
                 
             # Reset training metrics at the end of each epoch
             metric_val.reset_states()
@@ -136,11 +134,11 @@ def train(parameter_list, model, checkpoint, manager, summary_writer, optimizer)
 
             print('Time for epoch (in minutes): %s' %((time.time() - start_time)/60))
 
-    model_json = model.to_json()
+    if not(os.path.exists(parameter_list['model_loc'])):
+        model_json = model.to_json()
+        helpfunc.write_to_json(parameter_list['model_loc'], model_json)
 
-    helpfunc.write_to_json(parameter_list['model_loc'], model_json)
-
-    return (epoch + 1)
+    return parameter_list['global_epoch']
 
 def traintest(parameter_list, flag='train'):
 

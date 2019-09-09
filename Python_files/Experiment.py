@@ -40,7 +40,7 @@ if not os.path.exists(parameter_list['experiment_dir']):
     os.mkdir(parameter_list['checkpoint_dir'])
 
     #Network related settings
-    parameter_list['LSTM_output'] = 5
+    parameter_list['LSTM_output'] = 100
     parameter_list['net_output'] = 1
     parameter_list['activation'] = 'tanh'
     parameter_list['rec_activation'] = 'hard_sigmoid'
@@ -52,11 +52,11 @@ if not os.path.exists(parameter_list['experiment_dir']):
 
     #Training related settings
     parameter_list['learning_rate'] = 1e-3
-    parameter_list['max_checkpoint_keep'] = 4
-    parameter_list['epochs'] = 2
+    parameter_list['max_checkpoint_keep'] = 1
+    parameter_list['epochs'] = 50
     parameter_list['log_freq'] = 5
     parameter_list['early_stop_patience'] = 5
-    parameter_list['num_epochs_checkpoint'] = 2
+    parameter_list['num_epochs_checkpoint'] = 1
     parameter_list['summery_freq'] = 1
     parameter_list['global_epoch'] = 0
     parameter_list['batch_size'] = 250
