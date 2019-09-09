@@ -17,8 +17,16 @@ def rnn_model(parameter_list):
                             unroll = parameter_list['unroll_lstm'],
                             return_sequences=True)(net_input)
 
-    output = tf.keras.layers.Dense(units=parameter_list['net_output'],
-                            kernel_regularizer = tf.keras.regularizers.l2(parameter_list['l2_regu']),
-                            activation = tf.keras.layers.ELU(1.5))(x)
+    if parameter_list['new_forecast']:
+
+        output = tf.keras.layers.Dense(units=parameter_list['net_output'],
+                                kernel_regularizer = tf.keras.regularizers.l2(parameter_list['l2_regu']),
+                                activation = tf.keras.layers.ELU(1.5))(x)
+
+    else:
+
+        output = net_input + tf.keras.layers.Dense(units=parameter_list['net_output'],
+                                kernel_regularizer = tf.keras.regularizers.l2(parameter_list['l2_regu']),
+                                activation = tf.keras.layers.ELU(1.5))(x)
     
     return tf.keras.Model(net_input, output, name='RNN')
