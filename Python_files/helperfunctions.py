@@ -91,11 +91,11 @@ def tfrecord(parameter_list):
     analysis_init = root_grp["vam"]
     forecast_init = root_grp["vfm"]
 
-    analysis_dataset = helpfunc.truth_label_creator(analysis_init)
-    forecast_dataset = helpfunc.locality_creator(forecast_init, parameter_list['locality'], parameter_list['xlocal'])
+    analysis_dataset = truth_label_creator(analysis_init)
+    forecast_dataset = locality_creator(forecast_init, parameter_list['locality'], parameter_list['xlocal'])
 
-    helpfunc.write_TFRecord(parameter_list['tfrecord_analysis'], analysis_dataset, parameter_list['time_splits'])
-    helpfunc.write_TFRecord(parameter_list['tfrecord_forecast'], forecast_dataset, parameter_list['time_splits'])
+    write_TFRecord(parameter_list['tfrecord_analysis'], analysis_dataset, parameter_list['time_splits'])
+    write_TFRecord(parameter_list['tfrecord_forecast'], forecast_dataset, parameter_list['time_splits'])
 
 def write_to_json(loc, model):
     with open(loc, 'w') as json_file:
