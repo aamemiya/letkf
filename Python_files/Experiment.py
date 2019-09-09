@@ -12,13 +12,13 @@ import training_test as tntt
 parameter_list = {}
 
 #Dataset and directories related settings
-parameter_list['netCDf_loc'] = "../lorenz96_multi/DATA_sample/X40F18/all_10/nocorr_I20/assim.nc"
+parameter_list['netCDf_loc'] = "/home/mshlok/letkf/DATA_sample_log/X40F18/all_10/nocorr_I20/assim.nc"
 parameter_list['xlocal'] = 3
 parameter_list['locality'] = 19
-parameter_list['num_timesteps'] = 20000
+parameter_list['num_timesteps'] = 30000
 parameter_list['time_splits'] = 30
-parameter_list['tfrecord_analysis'] = './analysis.tfrecord'
-parameter_list['tfrecord_forecast'] = './forecast.tfrecord'
+parameter_list['tfrecord_analysis'] = './tfrecord/X40F18_I20_analysis.tfrecord'
+parameter_list['tfrecord_forecast'] = './tfrecord/X40F18_I20_forecast.tfrecord'
 parameter_list['experiment_dir'] = "./exper"
 parameter_list['checkpoint_dir'] = parameter_list['experiment_dir'] + '/checkpoint'
 parameter_list['log_dir'] = parameter_list['experiment_dir'] + '/log'
@@ -58,7 +58,6 @@ if not os.path.exists(parameter_list['experiment_dir']):
     #Training related settings
     parameter_list['learning_rate'] = 1e-3
     parameter_list['max_checkpoint_keep'] = 1
-    parameter_list['epochs'] = 50
     parameter_list['log_freq'] = 5
     parameter_list['early_stop_patience'] = 5
     parameter_list['num_epochs_checkpoint'] = 1
@@ -73,6 +72,8 @@ else:
     else:
         print('\nNo CSV file exists at {}. Exiting....\n'.format(csv_name))
         sys.exit()
+
+parameter_list['epochs'] = 5
 
 parameter_list['global_epoch'] = tntt.traintest(copy.deepcopy(parameter_list))
 params_dataframe = pd.DataFrame(parameter_list, index=[1])
