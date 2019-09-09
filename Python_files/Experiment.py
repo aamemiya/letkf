@@ -15,6 +15,7 @@ parameter_list = {}
 parameter_list['netCDf_loc'] = "../lorenz96_multi/DATA_sample/X40F18/all_10/nocorr_I20/assim.nc"
 parameter_list['xlocal'] = 3
 parameter_list['locality'] = 19
+parameter_list['num_timesteps'] = 20000
 parameter_list['time_splits'] = 30
 parameter_list['tfrecord_analysis'] = './analysis.tfrecord'
 parameter_list['tfrecord_forecast'] = './forecast.tfrecord'
@@ -73,4 +74,3 @@ parameter_list['global_epoch'] = tntt.traintest(copy.deepcopy(parameter_list))
 params_dataframe = pd.DataFrame(parameter_list, index=[1])
 
 helpfunc.write_dataframe(params_dataframe, csv_name)
-
