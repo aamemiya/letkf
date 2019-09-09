@@ -142,6 +142,8 @@ def train(parameter_list, model, checkpoint, manager, summary_writer, optimizer)
 
 def traintest(parameter_list, flag='train'):
 
+    print(tf.config.experimental.get_visible_devices(device_type='GPU'))
+
     #Get the Model
     if os.path.exists(parameter_list['model_loc']):
         print('\nLoading saved model...\n')
@@ -149,6 +151,10 @@ def traintest(parameter_list, flag='train'):
         model = tf.keras.models.model_from_json(j_string)
     else:
         model = net.rnn_model(parameter_list)
+
+    #Setting for running it on multiple GPU's
+    # parallel_model = tf.keras.utils.multi_gpu_model(model, gpus = 0)
+    parallel_model = model
 
     #Defining Model compiling parameters
     learning_rate = parameter_list['learning_rate']
@@ -158,7 +164,7 @@ def traintest(parameter_list, flag='train'):
     summary_writer = tf.summary.create_file_writer(logdir= parameter_list['log_dir'])
 
     #Creating checkpoint instance
-    checkpoint = tf.train.Checkpoint(epoch = tf.Variable(0), optimizer = optimizer, model = model)
+    checkpoint = tf.train.Checkpoint(epoch = tf.Variable(0), optimizer = optimizer, model = parallel_model)
     save_directory = parameter_list['checkpoint_dir']
     manager = tf.train.CheckpointManager(checkpoint, directory= save_directory, 
                                         max_to_keep= parameter_list['max_checkpoint_keep'])
@@ -174,7 +180,7 @@ def traintest(parameter_list, flag='train'):
 
         if flag == 'train':
             print('Starting training for a restored point... \n')
-            return train(parameter_list, model, checkpoint, manager, summary_writer, optimizer)
+            return train(parameter_list, parallel_model, checkpoint, manager, summary_writer, optimizer)
         
     else:
         print("No checkpoint exists.")
@@ -185,5 +191,5 @@ def traintest(parameter_list, flag='train'):
         
         if flag == 'train':
             print('Initializing from scratch... \n')
-            parameter_list = train(parameter_list, model, checkpoint, manager, summary_writer, optimizer)
+            parameter_list = train(parameter_list, parallel_model, checkpoint, manager, summary_writer, optimizer)
             return parameter_list
