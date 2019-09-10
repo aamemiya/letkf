@@ -12,20 +12,29 @@ import network_arch as net
 mirrored_strategy = tf.distribute.MirroredStrategy()
 
 def train(parameter_list, model, checkpoint, manager, summary_writer, optimizer):
+    
+    print("\nCreating Dataset\n")
+    forecast_dataset, analysis_dataset = helpfunc.createdataset(parameter_list)
 
-    #Reading the TFRecord files
-    anal_file = helpfunc.read_TFRecord(parameter_list['tfrecord_analysis'])
-    fore_file = helpfunc.read_TFRecord(parameter_list['tfrecord_forecast'])
+    analysis_split = helpfunc.split_sequences(analysis_dataset[:,100:,:], parameter_list['time_splits'])
+    analysis_split = np.transpose(analysis_split, (1,0,2,3))
 
-    #Parsing the dataset
-    anal_file = anal_file.map(helpfunc._parse_tensor)
-    fore_file = fore_file.map(helpfunc._parse_tensor)
+    forecast_split = helpfunc.split_sequences(forecast_dataset[:,100:,:], parameter_list['time_splits'])
+    forecast_split = np.transpose(forecast_split, (1,0,2,3))
+
+    analysis_split = np.reshape(analysis_split, (analysis_split.shape[0]*analysis_split.shape[1],
+                                parameter_list['time_splits'], 1))
+    forecast_split = np.reshape(forecast_split, (forecast_split.shape[0]*forecast_split.shape[1],
+                                parameter_list['time_splits'], parameter_list['locality']))
+
+    tfdataset_analysis = helpfunc.create_tfdataset(analysis_split)
+    tfdataset_forecast = helpfunc.create_tfdataset(forecast_split)
 
     #Zipping the files
-    dataset = tf.data.Dataset.zip((fore_file, anal_file))
+    dataset = tf.data.Dataset.zip((tfdataset_forecast, tfdataset_analysis))
 
     #Shuffling the dataset
-    dataset = dataset.shuffle(10000)
+    dataset = dataset.shuffle(1000000)
     dataset = dataset.batch(batch_size=parameter_list['global_batch_size'])
 
     #Creating Train and Validation datasets
@@ -38,11 +47,11 @@ def train(parameter_list, model, checkpoint, manager, summary_writer, optimizer)
     #Loss and metric
     with mirrored_strategy.scope():
         
-        loss_func = tf.keras.losses.MeanSquaredError(name='Loss: MSE')
+        loss_func = tf.keras.losses.MeanSquaredError(reduction = tf.keras.losses.Reduction.NONE,
+                                                    name='LossMSE')
         def compute_loss(labels, predictions):
             per_example_loss = loss_func(labels, predictions)
-            return tf.nn.compute_average_loss(per_example_loss,
-                                                global_batch_size= parameter_list['global_batch_size'])
+            return tf.reduce_sum(per_example_loss) * (1.0 / parameter_list['global_batch_size'])
         
         metric_train = tf.keras.metrics.RootMeanSquaredError(name='T_RMSE')
         metric_val = tf.keras.metrics.RootMeanSquaredError(name='V_RMSE')
@@ -59,7 +68,7 @@ def train(parameter_list, model, checkpoint, manager, summary_writer, optimizer)
             gradients = tape.gradient(loss, model.trainable_variables)
             optimizer.apply_gradients(zip(gradients, model.trainable_weights))
 
-            metric_train.update(analysis, pred_analysis)
+            metric_train.update_state(analysis, pred_analysis)
 
             return loss
 
@@ -68,18 +77,19 @@ def train(parameter_list, model, checkpoint, manager, summary_writer, optimizer)
             pred_analysis_val = model(local_forecast_val, training = False)
 
             val_loss = compute_loss(analysis_val, pred_analysis_val)
-            metric_val.update(analysis_val, pred_analysis_val)
+            metric_val.update_state(analysis_val, pred_analysis_val)
 
             return val_loss
 
+        @tf.function
         def distributed_train_step(inputs):
-            per_replica_losses = strategy.experimental_run_v2(train_step,
-                                                      args=(inputs,))
-            return strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_losses,
-                           axis=None)
-
+            per_replica_losses = mirrored_strategy.experimental_run_v2(train_step,
+                                                    args=(inputs,))
+            return mirrored_strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_losses,
+                                                    axis=None)
+        @tf.function
         def distributed_val_step(inputs):
-            return strategy.experimental_run_v2(val_step, args=(dataset_inputs,))
+            return mirrored_strategy.experimental_run_v2(val_step, args=(inputs,))
         
         #Initialing training variables
         global_step = 0
@@ -110,7 +120,7 @@ def train(parameter_list, model, checkpoint, manager, summary_writer, optimizer)
                     # Log of validation results  
                     if (step % parameter_list['log_freq']) == 0:
                         print('Training loss (for one batch) at step %s: %s' % (step+1, float(loss)))
-                        print('Seen so far: %s samples' % ((global_step) * parameter_list['batch_size']))
+                        print('Seen so far: %s samples' % ((global_step) * parameter_list['global_batch_size']))
                         
                 # Display metrics at the end of each epoch.
                 train_acc = metric_train.result()
@@ -219,7 +229,7 @@ def traintest(parameter_list, flag='train'):
 
         if flag == 'train':
             print('Starting training for a restored point... \n')
-            return train(parameter_list, parallel_model, checkpoint, manager, summary_writer, optimizer)
+            return train(parameter_list, model, checkpoint, manager, summary_writer, optimizer)
         
     else:
         print("No checkpoint exists.")
@@ -230,5 +240,5 @@ def traintest(parameter_list, flag='train'):
         
         if flag == 'train':
             print('Initializing from scratch... \n')
-            parameter_list = train(parameter_list, parallel_model, checkpoint, manager, summary_writer, optimizer)
+            parameter_list = train(parameter_list, model, checkpoint, manager, summary_writer, optimizer)
             return parameter_list
