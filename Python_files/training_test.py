@@ -142,7 +142,7 @@ def train(parameter_list, model, checkpoint, manager, summary_writer, optimizer)
 
 def traintest(parameter_list, flag='train'):
 
-    print(tf.config.experimental.get_visible_devices(device_type='GPU'))
+    print('GPU Available: {}'.format(tf.test.is_gpu_available()))
 
     #Get the Model
     if os.path.exists(parameter_list['model_loc']):
