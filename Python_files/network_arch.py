@@ -27,22 +27,25 @@ def rnn_model(parameter_list):
 
         x = tf.keras.layers.Dense(units=parameter_list['dense_output'],
                                 kernel_regularizer = tf.keras.regularizers.l2(parameter_list['l2_regu']),
-                                activation = tf.keras.layers.ELU(1.5),
+                                activation = None,
                                 name = 'DENSE_{}'.format(i+1))(x)
+        x = tf.keras.layers.ELU(1.5, name='ELU_{}'.format(i+1))(x)
 
     if parameter_list['new_forecast']:
 
         x = tf.keras.layers.Dense(units=parameter_list['net_output'],
                                 kernel_regularizer = tf.keras.regularizers.l2(parameter_list['l2_regu']),
-                                activation = tf.keras.layers.ELU(1.5),
+                                activation = None,
                                 name = 'DENSE_OUTPUT')(x)
+        x = tf.keras.layers.ELU(1.5, name = 'ELU_output')(x)
     
     else:
 
         x = inputs + tf.keras.layers.Dense(units=parameter_list['net_output'],
                                 kernel_regularizer = tf.keras.regularizers.l2(parameter_list['l2_regu']),
-                                activation = tf.keras.layers.ELU(1.5),
+                                activation = None,
                                 name = 'DENSE_OUTPUT')(x)
+        x = tf.keras.layers.ELU(1.5, name = 'ELU_output')(x)
     
     outputs = x
     return tf.keras.Model(inputs, outputs, name='RNN')
