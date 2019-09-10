@@ -157,7 +157,13 @@ def traintest(parameter_list, flag='train'):
     parallel_model = model
 
     #Defining Model compiling parameters
-    learning_rate = parameter_list['learning_rate']
+
+    #Creating the learning rate scheduler
+    learningrate_schedule = tf.keras.optimizers.schedules.ExponentialDecay(parameter_list['learning_rate'],
+                                                                      decay_steps = parameter_list['lr_decay_steps'],
+                                                                      decay_rate = 0.70,
+                                                                      staircase = True)
+    learning_rate = learningrate_schedule
     optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate, amsgrad=True)
 
     #Creating summary writer

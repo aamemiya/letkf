@@ -42,7 +42,7 @@ if not os.path.exists(parameter_list['experiment_dir']):
 
     #Network related settings
     parameter_list['num_lstm_layers'] = 1
-    parameter_list['num_dense_layers'] = 1
+    parameter_list['num_dense_layers'] = 2
     parameter_list['dense_output'] = 50
     parameter_list['LSTM_output'] = 100
     parameter_list['net_output'] = 1
@@ -65,6 +65,7 @@ if not os.path.exists(parameter_list['experiment_dir']):
     parameter_list['global_epoch'] = 0
     parameter_list['batch_size'] = 250
     parameter_list['val_size'] = 2
+    parameter_list['lr_decay_steps'] = 30000
 
 else:
     if os.path.isfile(csv_name):
