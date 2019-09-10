@@ -89,7 +89,9 @@ def train(parameter_list, model, checkpoint, manager, summary_writer, optimizer)
                                                     axis=None)
         @tf.function
         def distributed_val_step(inputs):
-            return mirrored_strategy.experimental_run_v2(val_step, args=(inputs,))
+            per_replica_losses = mirrored_strategy.experimental_run_v2(val_step, args=(inputs,))
+            return mirrored_strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_losses,
+                    axis=None)
         
         #Initialing training variables
         global_step = 0
@@ -142,7 +144,7 @@ def train(parameter_list, model, checkpoint, manager, summary_writer, optimizer)
                     val_loss = distributed_val_step(inputs)
 
                     if (step_val % parameter_list['log_freq']) == 0:
-                        print('Validation loss (for one batch) at step %s: %s' % (step_val, float(val_loss)))
+                        print('Validation loss (for one batch) at step {}: {}'.format(step_val, val_loss))
                         
                 val_acc = metric_val.result()
                 print('Validation acc over epoch: %s \n' % (float(val_acc)))
@@ -159,7 +161,7 @@ def train(parameter_list, model, checkpoint, manager, summary_writer, optimizer)
                     checkpoint.epoch.assign_add(1)
                     if int(checkpoint.epoch + 1) % parameter_list['num_epochs_checkpoint'] == 0:
                         save_path = manager.save()
-                        print("Saved checkpoint for epoch {}: {}".format(int(checkpoint.epoch), save_path))
+                        print("Saved checkpoint for epoch {}: {}".format(checkpoint.epoch, save_path))
                         print("loss {:1.2f}".format(loss.numpy()))
 
                 if math.isnan(val_acc):

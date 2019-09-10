@@ -55,7 +55,7 @@ if not os.path.exists(parameter_list['experiment_dir']):
     parameter_list['global_batch_size'] = 2048
     parameter_list['val_size'] = 2
     parameter_list['lr_decay_steps'] = 30000
-    parameter_list['learning_rate'] = 1e-3 * parameter_list['batch_size'] / 256
+    parameter_list['learning_rate'] = 1e-3 * parameter_list['global_batch_size'] / 256
 
 else:
     if os.path.isfile(csv_name):
