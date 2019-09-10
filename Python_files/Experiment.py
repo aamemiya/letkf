@@ -24,16 +24,6 @@ parameter_list['checkpoint_dir'] = parameter_list['experiment_dir'] + '/checkpoi
 parameter_list['log_dir'] = parameter_list['experiment_dir'] + '/log'
 parameter_list['model_loc'] = parameter_list['experiment_dir'] + '/model.json'
 
-if not(os.path.isfile(parameter_list['tfrecord_analysis']) and os.path.isfile(parameter_list['tfrecord_forecast'])):
-    if not(os.path.isfile(parameter_list['netCDf_loc'])):
-        print("\nNetCDF file doesn't exist for tfrecord creation, terminating....\n")
-        sys.exit()
-    else:
-        print("\nCreating TFrecord.\n")
-        helpfunc.tfrecord(parameter_list)
-else:
-    print('\nTFrecord file exists. Using them for training.\n')
-
 csv_name = parameter_list['checkpoint_dir'] + '/params.csv'
 
 if not os.path.exists(parameter_list['experiment_dir']):
@@ -62,7 +52,7 @@ if not os.path.exists(parameter_list['experiment_dir']):
     parameter_list['num_epochs_checkpoint'] = 1
     parameter_list['summery_freq'] = 1
     parameter_list['global_epoch'] = 0
-    parameter_list['batch_size'] = 2048
+    parameter_list['global_batch_size'] = 2048
     parameter_list['val_size'] = 2
     parameter_list['lr_decay_steps'] = 30000
     parameter_list['learning_rate'] = 1e-3 * parameter_list['batch_size'] / 256
