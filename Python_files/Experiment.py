@@ -12,7 +12,7 @@ import training_test as tntt
 parameter_list = {}
 
 #Dataset and directories related settings
-parameter_list['netCDf_loc'] = "/home/mshlok/letkf/DATA_sample_log/X40F18/all_10/nocorr_I20/assim.nc"
+parameter_list['netCDf_loc'] = "/home/mshlok/letkf/DATA_sample_long/X40F18/all_10/nocorr_I20/assim.nc"
 parameter_list['xlocal'] = 3
 parameter_list['locality'] = 19
 parameter_list['num_timesteps'] = 30000
@@ -56,16 +56,16 @@ if not os.path.exists(parameter_list['experiment_dir']):
     parameter_list['new_forecast'] = True
 
     #Training related settings
-    parameter_list['learning_rate'] = 1e-3
     parameter_list['max_checkpoint_keep'] = 1
     parameter_list['log_freq'] = 5
     parameter_list['early_stop_patience'] = 5
     parameter_list['num_epochs_checkpoint'] = 1
     parameter_list['summery_freq'] = 1
     parameter_list['global_epoch'] = 0
-    parameter_list['global_batch_size'] = 500
+    parameter_list['batch_size'] = 2048
     parameter_list['val_size'] = 2
     parameter_list['lr_decay_steps'] = 30000
+    parameter_list['learning_rate'] = 1e-3 * parameter_list['batch_size'] / 256
 
 else:
     if os.path.isfile(csv_name):
