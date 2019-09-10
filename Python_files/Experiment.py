@@ -41,6 +41,9 @@ if not os.path.exists(parameter_list['experiment_dir']):
     os.mkdir(parameter_list['checkpoint_dir'])
 
     #Network related settings
+    parameter_list['num_lstm_layers'] = 1
+    parameter_list['num_dense_layers'] = 1
+    parameter_list['dense_output'] = 50
     parameter_list['LSTM_output'] = 100
     parameter_list['net_output'] = 1
     parameter_list['activation'] = 'tanh'

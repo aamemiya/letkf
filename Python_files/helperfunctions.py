@@ -91,7 +91,7 @@ def tfrecord(parameter_list):
     analysis_init = root_grp["vam"]
     forecast_init = root_grp["vfm"]
 
-    analysis_dataset = truth_label_creator(analysis_init[:parameter_list['num_timesteps'])
+    analysis_dataset = truth_label_creator(analysis_init[:parameter_list['num_timesteps']])
     forecast_dataset = locality_creator(forecast_init[:parameter_list['num_timesteps']], parameter_list['locality'], parameter_list['xlocal'])
 
     write_TFRecord(parameter_list['tfrecord_analysis'], analysis_dataset, parameter_list['time_splits'])
