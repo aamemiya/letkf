@@ -47,11 +47,11 @@ def train(parameter_list, model, checkpoint, manager, summary_writer, optimizer)
     #Loss and metric
     with mirrored_strategy.scope():
         
-        loss_func = tf.keras.losses.MeanSquaredError(reduction = tf.keras.losses.Reduction.NONE,
+        loss_func = tf.keras.losses.MeanSquaredError(reduction = tf.keras.losses.Reduction.SUM,
                                                     name='LossMSE')
         def compute_loss(labels, predictions):
             per_example_loss = loss_func(labels, predictions)
-            return tf.reduce_sum(per_example_loss) * (1.0 / parameter_list['global_batch_size'])
+            return per_example_loss * (1.0 / (parameter_list['global_batch_size'] * parameter_list['time_splits']))
         
         metric_train = tf.keras.metrics.RootMeanSquaredError(name='T_RMSE')
         metric_val = tf.keras.metrics.RootMeanSquaredError(name='V_RMSE')
@@ -108,11 +108,13 @@ def train(parameter_list, model, checkpoint, manager, summary_writer, optimizer)
 
                 start_time = time.time()
 
-                print('\nStart of epoch %d' %(epoch+1))
+                parameter_list['global_epoch'] += 1
+
+                print('\nStart of epoch %d' %(parameter_list['global_epoch']))
             
                 # Iterate over the batches of the dataset.
                 for step, inputs in enumerate(train_dataset_dist):
-
+                
                     global_step += 1
 
                     # Open a GradientTape to record the operations run
@@ -128,10 +130,11 @@ def train(parameter_list, model, checkpoint, manager, summary_writer, optimizer)
                 train_acc = metric_train.result()
                 print('\nTraining loss at epoch end {}'.format(loss))
                 print('Training acc over epoch: %s \n' % (float(train_acc)))
+                print('Seen so far: %s samples' % ((global_step) * parameter_list['global_batch_size']))
 
                 if not(epoch % parameter_list['summery_freq']):
-                    tf.summary.scalar('Loss_total', loss, step= (epoch + 1))
-                    tf.summary.scalar('Train_RMSE', train_acc, step= (epoch + 1))
+                    tf.summary.scalar('Loss_total', loss, step= (parameter_list['global_epoch']))
+                    tf.summary.scalar('Train_RMSE', train_acc, step= (parameter_list['global_epoch']))
 
                 # Reset training metrics at the end of each epoch
                 metric_train.reset_states()
@@ -150,8 +153,8 @@ def train(parameter_list, model, checkpoint, manager, summary_writer, optimizer)
                 print('Validation acc over epoch: %s \n' % (float(val_acc)))
                 
                 if not(epoch % parameter_list['summery_freq']):
-                    tf.summary.scalar('Loss_total_val', val_loss, step= (epoch + 1))
-                    tf.summary.scalar('Val_RMSE', metric_val.result(), step= (epoch + 1))
+                    tf.summary.scalar('Loss_total_val', val_loss, step= (parameter_list['global_epoch']))
+                    tf.summary.scalar('Val_RMSE', metric_val.result(), step= (parameter_list['global_epoch']))
                     
                 # Reset training metrics at the end of each epoch
                 metric_val.reset_states()
@@ -190,7 +193,7 @@ def train(parameter_list, model, checkpoint, manager, summary_writer, optimizer)
 
 def traintest(parameter_list, flag='train'):
 
-    print('GPU Available: {}'.format(tf.test.is_gpu_available()))
+    print('\nGPU Available: {}\n'.format(tf.test.is_gpu_available()))
 
     #Get the Model
     with mirrored_strategy.scope():
@@ -206,11 +209,11 @@ def traintest(parameter_list, flag='train'):
                                                                       decay_steps = parameter_list['lr_decay_steps'],
                                                                       decay_rate = 0.70,
                                                                       staircase = True)
-        learning_rate = parameter_list['learning_rate']
-        optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate, amsgrad=True)
+        learning_rate = learningrate_schedule 
+        optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
 
         #Defining the checkpoint instance
-        checkpoint = tf.train.Checkpoint(epoch = tf.Variable(0), optimizer = optimizer, model = model)
+        checkpoint = tf.train.Checkpoint(epoch = tf.Variable(0), model = model)
 
     #Creating summary writer
     summary_writer = tf.summary.create_file_writer(logdir= parameter_list['log_dir'])
@@ -219,7 +222,7 @@ def traintest(parameter_list, flag='train'):
     save_directory = parameter_list['checkpoint_dir']
     manager = tf.train.CheckpointManager(checkpoint, directory= save_directory, 
                                         max_to_keep= parameter_list['max_checkpoint_keep'])
-    checkpoint.restore(manager.latest_checkpoint)
+    checkpoint.restore(manager.latest_checkpoint).expect_partial()
 
     #Checking if previous checkpoint exists
     if manager.latest_checkpoint:

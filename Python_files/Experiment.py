@@ -52,7 +52,7 @@ if not os.path.exists(parameter_list['experiment_dir']):
     parameter_list['num_epochs_checkpoint'] = 1
     parameter_list['summery_freq'] = 1
     parameter_list['global_epoch'] = 0
-    parameter_list['global_batch_size'] = 2048
+    parameter_list['global_batch_size'] = 2048 * 4
     parameter_list['val_size'] = 2
     parameter_list['lr_decay_steps'] = 30000
     parameter_list['learning_rate'] = 1e-3 * parameter_list['global_batch_size'] / 256
@@ -64,7 +64,7 @@ else:
         print('\nNo CSV file exists at {}. Exiting....\n'.format(csv_name))
         sys.exit()
 
-parameter_list['epochs'] = 5
+parameter_list['epochs'] = 4
 
 parameter_list['global_epoch'] = tntt.traintest(copy.deepcopy(parameter_list))
 params_dataframe = pd.DataFrame(parameter_list, index=[1])
