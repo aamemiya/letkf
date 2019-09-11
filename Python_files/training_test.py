@@ -9,162 +9,220 @@ import sys
 import helperfunctions as helpfunc
 import network_arch as net
 
+mirrored_strategy = tf.distribute.MirroredStrategy()
+
 def train(parameter_list, model, checkpoint, manager, summary_writer, optimizer):
+    
+    print("\nCreating Dataset\n")
+    forecast_dataset, analysis_dataset = helpfunc.createdataset(parameter_list)
 
-    #Reading the TFRecord files
-    anal_file = helpfunc.read_TFRecord(parameter_list['tfrecord_analysis'])
-    fore_file = helpfunc.read_TFRecord(parameter_list['tfrecord_forecast'])
+    analysis_split = helpfunc.split_sequences(analysis_dataset[:,100:,:], parameter_list['time_splits'])
+    analysis_split = np.transpose(analysis_split, (1,0,2,3))
 
-    #Parsing the dataset
-    anal_file = anal_file.map(helpfunc._parse_tensor)
-    fore_file = fore_file.map(helpfunc._parse_tensor)
+    forecast_split = helpfunc.split_sequences(forecast_dataset[:,100:,:], parameter_list['time_splits'])
+    forecast_split = np.transpose(forecast_split, (1,0,2,3))
+
+    analysis_split = np.reshape(analysis_split, (analysis_split.shape[0]*analysis_split.shape[1],
+                                parameter_list['time_splits'], 1))
+    forecast_split = np.reshape(forecast_split, (forecast_split.shape[0]*forecast_split.shape[1],
+                                parameter_list['time_splits'], parameter_list['locality']))
+
+    tfdataset_analysis = helpfunc.create_tfdataset(analysis_split)
+    tfdataset_forecast = helpfunc.create_tfdataset(forecast_split)
 
     #Zipping the files
-    dataset = tf.data.Dataset.zip((fore_file, anal_file))
+    dataset = tf.data.Dataset.zip((tfdataset_forecast, tfdataset_analysis))
 
     #Shuffling the dataset
-    dataset = dataset.shuffle(100000)
-    dataset = dataset.batch(batch_size=parameter_list['batch_size'])
+    dataset = dataset.shuffle(1000000)
+    dataset = dataset.batch(batch_size=parameter_list['global_batch_size'])
 
     #Creating Train and Validation datasets
     train_dataset, val_dataset = helpfunc.train_val_creator(dataset, parameter_list['val_size'])
 
+    #Distributing the dataset
+    train_dataset_dist = mirrored_strategy.experimental_distribute_dataset(train_dataset)
+    val_dataset_dist = mirrored_strategy.experimental_distribute_dataset(val_dataset)
+
     #Loss and metric
-    loss_func = tf.keras.losses.MeanSquaredError(name='Loss: MSE')
-    metric_train = tf.keras.metrics.RootMeanSquaredError(name='T_RMSE')
-    metric_val = tf.keras.metrics.RootMeanSquaredError(name='V_RMSE')
+    with mirrored_strategy.scope():
         
-    #Initialing training variables
-    global_step = 0
-    global_step_val = 0
-    val_min = 0
-    val_loss_min = 100
+        loss_func = tf.keras.losses.MeanSquaredError(reduction = tf.keras.losses.Reduction.SUM,
+                                                    name='LossMSE')
+        def compute_loss(labels, predictions):
+            per_example_loss = loss_func(labels, predictions)
+            return per_example_loss * (1.0 / (parameter_list['global_batch_size'] * parameter_list['time_splits']))
+        
+        metric_train = tf.keras.metrics.RootMeanSquaredError(name='T_RMSE')
+        metric_val = tf.keras.metrics.RootMeanSquaredError(name='V_RMSE')
 
-    #Starting training
-    with summary_writer.as_default():
-
-        epochs = parameter_list['epochs']
-
-        for epoch in range(epochs):
-
-            start_time = time.time()
-
-            print('\nStart of epoch %d' %(epoch+1))
-
-            # Iterate over the batches of the dataset.
-            for step, (local_forecast, analysis) in enumerate(train_dataset):
-
-                global_step += 1
-
-                # Open a GradientTape to record the operations run
-                # during the forward pass, which enables autodifferentiation.
-                with tf.GradientTape() as tape:
-
-                    pred_analysis = model(local_forecast)
-
-                    #Calculating relative loss
-                    loss = loss_func(analysis, pred_analysis)
-
-                gradients = tape.gradient(loss, model.trainable_variables)
-                optimizer.apply_gradients(zip(gradients, model.trainable_weights))
-
-                metric_train(analysis, pred_analysis)
-
-                # Log of validation results  
-                if (step % parameter_list['log_freq']) == 0:
-                    print('Training loss (for one batch) at step %s: %s' % (step+1, float(loss)))
-                    print('Seen so far: %s samples' % ((global_step) * parameter_list['batch_size']))
-                    
-            # Display metrics at the end of each epoch.
-            train_acc = metric_train.result()
-            print('\nTraining loss at epoch end {}'.format(loss))
-            print('Training acc over epoch: %s \n' % (float(train_acc)))
-
-            if not(epoch % parameter_list['summery_freq']):
-                tf.summary.scalar('Loss_total', loss, step= (epoch + 1))
-                tf.summary.scalar('Train_RMSE', train_acc, step= (epoch + 1))
-
-            # Reset training metrics at the end of each epoch
-            metric_train.reset_states()
-
-            #Code for validation at the end of each epoch
-            for step_val, (local_forecast_val, analysis_val) in enumerate(val_dataset):
-
-                global_step_val += 1
-
-                pred_analysis_val = model(local_forecast_val)
-
-                val_loss = loss_func(analysis_val, pred_analysis_val)
-                metric_val(analysis_val, pred_analysis_val)
-
-                if (step_val % parameter_list['log_freq']) == 0:
-                    print('Validation loss (for one batch) at step %s: %s' % (step_val, float(val_loss)))
-                    
-            val_acc = metric_val.result()
-            print('Validation acc over epoch: %s \n' % (float(val_acc)))
-            
-            if not(epoch % parameter_list['summery_freq']):
-                tf.summary.scalar('Loss_total_val', val_loss, step= (epoch + 1))
-                tf.summary.scalar('Val_RMSE', metric_val.result(), step= (epoch + 1))
+        def train_step(inputs):
+            with tf.GradientTape() as tape:
                 
-            # Reset training metrics at the end of each epoch
-            metric_val.reset_states()
+                local_forecast, analysis = inputs
+                pred_analysis = model(local_forecast)
 
-            if val_loss_min > val_loss:
-                val_loss_min = val_loss
-                checkpoint.epoch.assign_add(1)
-                if int(checkpoint.epoch + 1) % parameter_list['num_epochs_checkpoint'] == 0:
-                    save_path = manager.save()
-                    print("Saved checkpoint for epoch {}: {}".format(int(checkpoint.epoch), save_path))
-                    print("loss {:1.2f}".format(loss.numpy()))
+                #Calculating relative loss
+                loss = compute_loss(analysis, pred_analysis)
 
-            if math.isnan(val_acc):
-                print('Breaking out as the validation loss is nan')
-                break                
+            gradients = tape.gradient(loss, model.trainable_variables)
+            optimizer.apply_gradients(zip(gradients, model.trainable_weights))
 
-            if (epoch > 19):
-                if not (epoch % parameter_list['early_stop_patience']):
-                    if not (val_min):
-                        val_min = val_acc
-                    else:
-                        if val_min > val_acc:
+            metric_train.update_state(analysis, pred_analysis)
+
+            return loss
+
+        def val_step(inputs):
+            local_forecast_val, analysis_val = inputs
+            pred_analysis_val = model(local_forecast_val, training = False)
+
+            val_loss = compute_loss(analysis_val, pred_analysis_val)
+            metric_val.update_state(analysis_val, pred_analysis_val)
+
+            return val_loss
+
+        @tf.function
+        def distributed_train_step(inputs):
+            per_replica_losses = mirrored_strategy.experimental_run_v2(train_step,
+                                                    args=(inputs,))
+            return mirrored_strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_losses,
+                                                    axis=None)
+        @tf.function
+        def distributed_val_step(inputs):
+            per_replica_losses = mirrored_strategy.experimental_run_v2(val_step, args=(inputs,))
+            return mirrored_strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica_losses,
+                    axis=None)
+        
+        #Initialing training variables
+        global_step = 0
+        global_step_val = 0
+        val_min = 0
+        val_loss_min = 100
+
+        #Starting training
+        with summary_writer.as_default():
+
+            epochs = parameter_list['epochs']
+
+            for epoch in range(epochs):
+
+                start_time = time.time()
+
+                parameter_list['global_epoch'] += 1
+
+                print('\nStart of epoch %d' %(parameter_list['global_epoch']))
+            
+                # Iterate over the batches of the dataset.
+                for step, inputs in enumerate(train_dataset_dist):
+                
+                    global_step += 1
+
+                    # Open a GradientTape to record the operations run
+                    # during the forward pass, which enables autodifferentiation.
+                    loss = distributed_train_step(inputs)
+
+                    # Log of validation results  
+                    if (step % parameter_list['log_freq']) == 0:
+                        print('Training loss (for one batch) at step %s: %s' % (step+1, float(loss)))
+                        print('Seen so far: %s samples' % ((global_step) * parameter_list['global_batch_size']))
+                        
+                # Display metrics at the end of each epoch.
+                train_acc = metric_train.result()
+                print('\nTraining loss at epoch end {}'.format(loss))
+                print('Training acc over epoch: %s \n' % (float(train_acc)))
+                print('Seen so far: %s samples' % ((global_step) * parameter_list['global_batch_size']))
+
+                if not(epoch % parameter_list['summery_freq']):
+                    tf.summary.scalar('Loss_total', loss, step= (parameter_list['global_epoch']))
+                    tf.summary.scalar('Train_RMSE', train_acc, step= (parameter_list['global_epoch']))
+
+                # Reset training metrics at the end of each epoch
+                metric_train.reset_states()
+
+                #Code for validation at the end of each epoch
+                for step_val, inputs in enumerate(val_dataset_dist):
+
+                    global_step_val += 1
+
+                    val_loss = distributed_val_step(inputs)
+
+                    if (step_val % parameter_list['log_freq']) == 0:
+                        print('Validation loss (for one batch) at step {}: {}'.format(step_val, val_loss))
+                        
+                val_acc = metric_val.result()
+                print('Validation acc over epoch: %s \n' % (float(val_acc)))
+                
+                if not(epoch % parameter_list['summery_freq']):
+                    tf.summary.scalar('Loss_total_val', val_loss, step= (parameter_list['global_epoch']))
+                    tf.summary.scalar('Val_RMSE', metric_val.result(), step= (parameter_list['global_epoch']))
+                    
+                # Reset training metrics at the end of each epoch
+                metric_val.reset_states()
+
+                if val_loss_min > val_loss:
+                    val_loss_min = val_loss
+                    checkpoint.epoch.assign_add(1)
+                    if int(checkpoint.epoch + 1) % parameter_list['num_epochs_checkpoint'] == 0:
+                        save_path = manager.save()
+                        print("Saved checkpoint for epoch {}: {}".format(checkpoint.epoch, save_path))
+                        print("loss {:1.2f}".format(loss.numpy()))
+
+                if math.isnan(val_acc):
+                    print('Breaking out as the validation loss is nan')
+                    break                
+
+                if (epoch > 19):
+                    if not (epoch % parameter_list['early_stop_patience']):
+                        if not (val_min):
                             val_min = val_acc
                         else:
-                            print('Breaking loop as validation accuracy not improving')
-                            print("loss {:1.2f}".format(loss.numpy()))
-                            break
+                            if val_min > val_acc:
+                                val_min = val_acc
+                            else:
+                                print('Breaking loop as validation accuracy not improving')
+                                print("loss {:1.2f}".format(loss.numpy()))
+                                break
 
-            print('Time for epoch (in minutes): %s' %((time.time() - start_time)/60))
+                print('Time for epoch (in minutes): %s' %((time.time() - start_time)/60))
 
-    model_json = model.to_json()
+    if not(os.path.exists(parameter_list['model_loc'])):
+        model_json = model.to_json()
+        helpfunc.write_to_json(parameter_list['model_loc'], model_json)
 
-    helpfunc.write_to_json(parameter_list['model_loc'], model_json)
-
-    return (epoch + 1)
+    return parameter_list['global_epoch']
 
 def traintest(parameter_list, flag='train'):
 
-    #Get the Model
-    if os.path.exists(parameter_list['model_loc']):
-        print('\nLoading saved model...\n')
-        j_string = helpfunc.read_json(parameter_list['model_loc'])
-        model = tf.keras.models.model_from_json(j_string)
-    else:
-        model = net.rnn_model(parameter_list)
+    print('\nGPU Available: {}\n'.format(tf.test.is_gpu_available()))
 
-    #Defining Model compiling parameters
-    learning_rate = parameter_list['learning_rate']
-    optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate, amsgrad=True)
+    #Get the Model
+    with mirrored_strategy.scope():
+        if os.path.exists(parameter_list['model_loc']):
+            print('\nLoading saved model...\n')
+            j_string = helpfunc.read_json(parameter_list['model_loc'])
+            model = tf.keras.models.model_from_json(j_string)
+        else:
+            model = net.rnn_model(parameter_list)
+
+        #Defining Model compiling parameters
+        learningrate_schedule = tf.keras.optimizers.schedules.ExponentialDecay(parameter_list['learning_rate'],
+                                                                      decay_steps = parameter_list['lr_decay_steps'],
+                                                                      decay_rate = 0.70,
+                                                                      staircase = True)
+        learning_rate = learningrate_schedule 
+        optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
+
+        #Defining the checkpoint instance
+        checkpoint = tf.train.Checkpoint(epoch = tf.Variable(0), model = model)
 
     #Creating summary writer
     summary_writer = tf.summary.create_file_writer(logdir= parameter_list['log_dir'])
 
     #Creating checkpoint instance
-    checkpoint = tf.train.Checkpoint(epoch = tf.Variable(0), optimizer = optimizer, model = model)
     save_directory = parameter_list['checkpoint_dir']
     manager = tf.train.CheckpointManager(checkpoint, directory= save_directory, 
                                         max_to_keep= parameter_list['max_checkpoint_keep'])
-    checkpoint.restore(manager.latest_checkpoint)
+    checkpoint.restore(manager.latest_checkpoint).expect_partial()
 
     #Checking if previous checkpoint exists
     if manager.latest_checkpoint:

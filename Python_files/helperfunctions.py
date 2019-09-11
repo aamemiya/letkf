@@ -37,14 +37,14 @@ def truth_label_creator(init_dataset):
 #Creating time data splits
 def split_sequences(sequences, n_steps):
     X = list()
-    for i in range(len(sequences)):
+    for i in range(sequences.shape[1]):
         # find the end of this pattern
         end_ix = i*n_steps + n_steps
         # check if we are beyond the dataset
-        if end_ix > len(sequences):
+        if end_ix > sequences.shape[1]:
             break
         # gather input and output parts of the pattern
-        seq_x = sequences[i*n_steps:end_ix, :]
+        seq_x = sequences[:,i*n_steps:end_ix, :]
         X.append(seq_x)
     return np.array(X)
 
@@ -91,11 +91,11 @@ def tfrecord(parameter_list):
     analysis_init = root_grp["vam"]
     forecast_init = root_grp["vfm"]
 
-    analysis_dataset = helpfunc.truth_label_creator(analysis_init)
-    forecast_dataset = helpfunc.locality_creator(forecast_init, parameter_list['locality'], parameter_list['xlocal'])
+    analysis_dataset = truth_label_creator(analysis_init[:parameter_list['num_timesteps']])
+    forecast_dataset = locality_creator(forecast_init[:parameter_list['num_timesteps']], parameter_list['locality'], parameter_list['xlocal'])
 
-    helpfunc.write_TFRecord(parameter_list['tfrecord_analysis'], analysis_dataset, parameter_list['time_splits'])
-    helpfunc.write_TFRecord(parameter_list['tfrecord_forecast'], forecast_dataset, parameter_list['time_splits'])
+    write_TFRecord(parameter_list['tfrecord_analysis'], analysis_dataset, parameter_list['time_splits'])
+    write_TFRecord(parameter_list['tfrecord_forecast'], forecast_dataset, parameter_list['time_splits'])
 
 def write_to_json(loc, model):
     with open(loc, 'w') as json_file:
@@ -106,3 +106,23 @@ def read_json(loc):
     content = json_file.read()
     json_file.close()
     return content
+
+def createdataset(parameter_list):
+
+    #Getting the NetCDF files
+    root_grp = Dataset(parameter_list['netCDf_loc'], "r", format="NETCDF4")
+
+    #Extrating the datasets
+    analysis_init = root_grp["vam"]
+    forecast_init = root_grp["vfm"]
+
+    analysis_dataset = truth_label_creator(analysis_init[:parameter_list['num_timesteps']])
+    forecast_dataset = locality_creator(forecast_init[:parameter_list['num_timesteps']], parameter_list['locality'], parameter_list['xlocal'])
+
+    return forecast_dataset, analysis_dataset
+
+#Code for creating Tensorflow Dataset:
+def create_tfdataset(initial_dataset):
+    tf_dataset = tf.data.Dataset.from_tensor_slices(initial_dataset)
+    return tf_dataset
+
