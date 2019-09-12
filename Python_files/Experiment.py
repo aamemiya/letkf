@@ -19,8 +19,8 @@ parameter_list['num_timesteps'] = 30000
 parameter_list['time_splits'] = 30
 parameter_list['tfrecord_analysis'] = './tfrecord/X40F18_I20_analysis.tfrecord'
 parameter_list['tfrecord_forecast'] = './tfrecord/X40F18_I20_forecast.tfrecord'
-parameter_list['experiment_folder'] = './experiments/'
-parameter_list['experiment_name'] = "Dense"
+parameter_list['experiment_name'] = "L15_D10_5"
+parameter_list['experiment_dir'] = './n_experiments/' + parameter_list['experiment_name'] 
 parameter_list['checkpoint_dir'] = parameter_list['experiment_dir'] + '/checkpoint'
 parameter_list['log_dir'] = parameter_list['experiment_dir'] + '/log'
 parameter_list['model_loc'] = parameter_list['experiment_dir'] + '/model.json'
@@ -32,11 +32,11 @@ if not os.path.exists(parameter_list['experiment_dir']):
     os.mkdir(parameter_list['checkpoint_dir'])
 
     #Network related settings
-    parameter_list['make_recurrent'] = False 
+    parameter_list['make_recurrent'] = True 
     parameter_list['num_lstm_layers'] = 1
-    parameter_list['num_dense_layers'] = 4
-    parameter_list['dense_output'] = [14, 9, 4]
-    parameter_list['LSTM_output'] = [12]
+    parameter_list['num_dense_layers'] = 3
+    parameter_list['dense_output'] = [10, 5]
+    parameter_list['LSTM_output'] = [15]
     parameter_list['net_output'] = 1
     parameter_list['activation'] = 'tanh'
     parameter_list['rec_activation'] = 'hard_sigmoid'
@@ -50,11 +50,11 @@ if not os.path.exists(parameter_list['experiment_dir']):
     #Training related settings
     parameter_list['max_checkpoint_keep'] = 1
     parameter_list['log_freq'] = 5
-    parameter_list['early_stop_patience'] = 50
+    parameter_list['early_stop_patience'] = 500
     parameter_list['num_epochs_checkpoint'] = 1
     parameter_list['summery_freq'] = 1
     parameter_list['global_epoch'] = 0
-    parameter_list['global_batch_size'] = 2048 * 4 * 8
+    parameter_list['global_batch_size'] = 2048 * 4 
     parameter_list['val_size'] = 1
     parameter_list['lr_decay_steps'] = 300000
     parameter_list['lr_decay_rate'] = 0.70
@@ -67,9 +67,10 @@ else:
         print('\nNo CSV file exists at {}. Exiting....\n'.format(csv_name))
         sys.exit()
 
-parameter_list['epochs'] = 300
+parameter_list['epochs'] = 400
 parameter_list['test_num_timesteps'] = 300
+parameter_list['flag'] = 'test'
 
-parameter_list['global_epoch'] = tntt.traintest(copy.deepcopy(parameter_list))
+parameter_list['global_epoch'] = tntt.traintest(copy.deepcopy(parameter_list), flag = parameter_list['flag'])
 
 helpfunc.write_dataframe(parameter_list, pickle_name)

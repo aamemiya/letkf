@@ -207,18 +207,18 @@ def test(parameter_list, model):
     analysis_init = root_grp["vam"]
     forecast_init = root_grp["vfm"]
 
-    analysis_dataset = truth_label_creator(analysis_init[10:parameter_list['test_num_timesteps']])
-    forecast_dataset = forecast_dataset = locality_creator(forecast_init[10:parameter_list['test_num_timesteps']],
+    analysis_dataset = helpfunc.truth_label_creator(analysis_init[10:parameter_list['test_num_timesteps']])
+    forecast_dataset = helpfunc.locality_creator(forecast_init[10:parameter_list['test_num_timesteps']],
                                                             parameter_list['locality'],
                                                             parameter_list['xlocal'])
     
-    new_forecast = np.zeros_like(analysis_dataset, dtype='float32')
+    new_forecast = np.zeros((analysis_dataset.shape[0], analysis_dataset.shape[1]), dtype='float32')
 
     if parameter_list['make_recurrent']:
         for i in range(forecast_dataset.shape[1]):
             forecast = np.expand_dims(forecast_dataset[:,i,:], axis=1)
-            new_forecast[:,i,:] = model(forecast)
-        new_forecast = np.transpose(np.squeeze(new_forecast))
+            new_forecast[:,i] = np.squeeze(model(forecast))
+        new_forecast = np.transpose(new_forecast)
     else:
         for j in range(forecast_dataset.shape[0]):             
                 forecast = forecast_dataset[j,:,:]
@@ -270,22 +270,22 @@ def traintest(parameter_list, flag='train'):
 
         if flag == 'test':
             print('Starting testing...')
-            return test(parameter_list, model)
-
+            test(parameter_list, model)
+            return parameter_list['global_epoch']
         if flag == 'train':
-            print('Starting training for a restored point... \n')
+            print('Starting training from a restored point... \n')
             return train(parameter_list, model, checkpoint, manager, summary_writer, optimizer)
         
     else:
         print("No checkpoint exists.")
         
-        # if flag == 'test':
-        #     print('Cannot test as no checkpoint exists. Exiting...')
-        #     return parameter_list
+        if flag == 'test':
+             print('Cannot test as no checkpoint exists. Exiting...')
+             return parameter_list['global_epoch']
         
         if flag == 'train':
             print('Initializing from scratch... \n')
             parameter_list = train(parameter_list, model, checkpoint, manager, summary_writer, optimizer)
-            return parameter_list
+            return parameter_list['global_epoch']
 
     print(learning_rate)
