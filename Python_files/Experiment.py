@@ -19,7 +19,8 @@ parameter_list['num_timesteps'] = 30000
 parameter_list['time_splits'] = 30
 parameter_list['tfrecord_analysis'] = './tfrecord/X40F18_I20_analysis.tfrecord'
 parameter_list['tfrecord_forecast'] = './tfrecord/X40F18_I20_forecast.tfrecord'
-parameter_list['experiment_dir'] = "./experiments/Dense"
+parameter_list['experiment_folder'] = './experiments/'
+parameter_list['experiment_name'] = "Dense"
 parameter_list['checkpoint_dir'] = parameter_list['experiment_dir'] + '/checkpoint'
 parameter_list['log_dir'] = parameter_list['experiment_dir'] + '/log'
 parameter_list['model_loc'] = parameter_list['experiment_dir'] + '/model.json'
@@ -67,6 +68,7 @@ else:
         sys.exit()
 
 parameter_list['epochs'] = 300
+parameter_list['test_num_timesteps'] = 300
 
 parameter_list['global_epoch'] = tntt.traintest(copy.deepcopy(parameter_list))
 
