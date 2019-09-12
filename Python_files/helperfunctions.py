@@ -4,6 +4,7 @@ from netCDF4 import Dataset
 import time
 import math
 import pandas as pd
+import pickle
 
 #For creating locality for individual state variable
 def locality_creator(init_dataset, locality_range, xlocal):
@@ -78,10 +79,15 @@ def train_val_creator(dataset, val_size):
     return train_dataset, val_dataset
 
 def read_dataframe(filename):
-    return pd.read_csv(filename).to_dict(orient= 'records')[0]
+    pickle_in = open(filename, "rb")
+    parameter_list = pickle.load(pickle_in)
+    pickle_in.close()
+    return parameter_list
 
-def write_dataframe(dataframe, filename):   
-    dataframe.to_csv(filename)
+def write_dataframe(dicty, filename):   
+    pickle_out = open(filename, "wb")
+    pickle.dump(dicty, pickle_out)
+    pickle_out.close()
 
 def tfrecord(parameter_list):
     #Getting the NetCDF files

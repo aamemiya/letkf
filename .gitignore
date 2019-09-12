@@ -28,7 +28,7 @@ lorenz63/tmp
 lorenz63/DATA
 KS/tmp
 KS/DATA
-
+experiment*
 *DATA*
 .ipynb_checkpoints/
 *.tfrecord
