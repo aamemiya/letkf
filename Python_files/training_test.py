@@ -14,21 +14,30 @@ mirrored_strategy = tf.distribute.MirroredStrategy()
 def train(parameter_list, model, checkpoint, manager, summary_writer, optimizer):
     
     print("\nCreating Dataset\n")
+
     forecast_dataset, analysis_dataset = helpfunc.createdataset(parameter_list)
+    if parameter_list['make_recurrent']:
+        analysis_split = helpfunc.split_sequences(analysis_dataset[:,100:,:], parameter_list['time_splits'])
+        analysis_split = np.transpose(analysis_split, (1,0,2,3))
 
-    analysis_split = helpfunc.split_sequences(analysis_dataset[:,100:,:], parameter_list['time_splits'])
-    analysis_split = np.transpose(analysis_split, (1,0,2,3))
+        forecast_split = helpfunc.split_sequences(forecast_dataset[:,100:,:], parameter_list['time_splits'])
+        forecast_split = np.transpose(forecast_split, (1,0,2,3))
 
-    forecast_split = helpfunc.split_sequences(forecast_dataset[:,100:,:], parameter_list['time_splits'])
-    forecast_split = np.transpose(forecast_split, (1,0,2,3))
-
-    analysis_split = np.reshape(analysis_split, (analysis_split.shape[0]*analysis_split.shape[1],
+        analysis_dataset = np.reshape(analysis_split, (analysis_split.shape[0]*analysis_split.shape[1],
                                 parameter_list['time_splits'], 1))
-    forecast_split = np.reshape(forecast_split, (forecast_split.shape[0]*forecast_split.shape[1],
+        forecast_dataset = np.reshape(forecast_split, (forecast_split.shape[0]*forecast_split.shape[1],
                                 parameter_list['time_splits'], parameter_list['locality']))
 
-    tfdataset_analysis = helpfunc.create_tfdataset(analysis_split)
-    tfdataset_forecast = helpfunc.create_tfdataset(forecast_split)
+    else:
+        parameter_list['time_splits'] = 1
+        analysis_dataset = np.reshape(analysis_dataset, (analysis_dataset.shape[0]*analysis_dataset.shape[1],
+                                      1))
+        forecast_dataset = np.reshape(forecast_dataset, (forecast_dataset.shape[0]*forecast_dataset.shape[1],
+                                      parameter_list['locality']))
+
+
+    tfdataset_analysis = helpfunc.create_tfdataset(analysis_dataset)
+    tfdataset_forecast = helpfunc.create_tfdataset(forecast_dataset)
 
     #Zipping the files
     dataset = tf.data.Dataset.zip((tfdataset_forecast, tfdataset_analysis))
@@ -68,7 +77,7 @@ def train(parameter_list, model, checkpoint, manager, summary_writer, optimizer)
             gradients = tape.gradient(loss, model.trainable_variables)
             optimizer.apply_gradients(zip(gradients, model.trainable_weights))
 
-            metric_train.update_state(analysis, pred_analysis)
+            metric_train(analysis, pred_analysis)
 
             return loss
 
@@ -77,7 +86,7 @@ def train(parameter_list, model, checkpoint, manager, summary_writer, optimizer)
             pred_analysis_val = model(local_forecast_val, training = False)
 
             val_loss = compute_loss(analysis_val, pred_analysis_val)
-            metric_val.update_state(analysis_val, pred_analysis_val)
+            metric_val(analysis_val, pred_analysis_val)
 
             return val_loss
 
@@ -124,16 +133,15 @@ def train(parameter_list, model, checkpoint, manager, summary_writer, optimizer)
                     # Log of validation results  
                     if (step % parameter_list['log_freq']) == 0:
                         print('Training loss (for one batch) at step %s: %s' % (step+1, float(loss)))
-                        print('Seen so far: %s samples' % ((global_step) * parameter_list['global_batch_size']))
                         
                 # Display metrics at the end of each epoch.
                 train_acc = metric_train.result()
                 print('\nTraining loss at epoch end {}'.format(loss))
-                print('Training acc over epoch: %s \n' % (float(train_acc)))
-                print('Seen so far: %s samples' % ((global_step) * parameter_list['global_batch_size']))
+                print('Training acc over epoch: %s ' % (float(train_acc)))
+                print('Seen so far: %s samples\n' % ((global_step) * parameter_list['global_batch_size']))
 
                 if not(epoch % parameter_list['summery_freq']):
-                    tf.summary.scalar('Loss_total', loss, step= (parameter_list['global_epoch']))
+                    tf.summary.scalar('Loss_total', loss, step= parameter_list['global_epoch'])
                     tf.summary.scalar('Train_RMSE', train_acc, step= (parameter_list['global_epoch']))
 
                 # Reset training metrics at the end of each epoch
@@ -191,6 +199,38 @@ def train(parameter_list, model, checkpoint, manager, summary_writer, optimizer)
 
     return parameter_list['global_epoch']
 
+def test(parameter_list, model):
+
+    root_grp = Dataset(parameter_list['netCDf_loc'], "a", format="NETCDF4")
+
+    #Extrating the datasets
+    analysis_init = root_grp["vam"]
+    forecast_init = root_grp["vfm"]
+
+    analysis_dataset = helpfunc.truth_label_creator(analysis_init[10:parameter_list['test_num_timesteps']])
+    forecast_dataset = helpfunc.locality_creator(forecast_init[10:parameter_list['test_num_timesteps']],
+                                                            parameter_list['locality'],
+                                                            parameter_list['xlocal'])
+    
+    new_forecast = np.zeros((analysis_dataset.shape[0], analysis_dataset.shape[1]), dtype='float32')
+
+    if parameter_list['make_recurrent']:
+        for i in range(forecast_dataset.shape[1]):
+            forecast = np.expand_dims(forecast_dataset[:,i,:], axis=1)
+            new_forecast[:,i] = np.squeeze(model(forecast))
+        new_forecast = np.transpose(new_forecast)
+    else:
+        for j in range(forecast_dataset.shape[0]):             
+                forecast = forecast_dataset[j,:,:]
+                new_forecast[j,:,:] = model(forecast)
+        new_forecast = np.transpose(np.squeeze(new_forecast))
+
+    test_time = root_grp.createDimension('tt', forecast_dataset.shape[1])
+    v_test_time = root_grp.createVariable('v_test_time', 'i', ('tt',))
+    model_vfm = root_grp.createVariable(parameter_list['experiment_name'] + '_vfm', 'f4', ('tt','x',))
+    model_vfm[:] = new_forecast
+    root_grp.close()
+    
 def traintest(parameter_list, flag='train'):
 
     print('\nGPU Available: {}\n'.format(tf.test.is_gpu_available()))
@@ -207,7 +247,7 @@ def traintest(parameter_list, flag='train'):
         #Defining Model compiling parameters
         learningrate_schedule = tf.keras.optimizers.schedules.ExponentialDecay(parameter_list['learning_rate'],
                                                                       decay_steps = parameter_list['lr_decay_steps'],
-                                                                      decay_rate = 0.70,
+                                                                      decay_rate = parameter_list['lr_decay_rate'],
                                                                       staircase = True)
         learning_rate = learningrate_schedule 
         optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
@@ -228,22 +268,24 @@ def traintest(parameter_list, flag='train'):
     if manager.latest_checkpoint:
         print("Restored from {}".format(manager.latest_checkpoint))
 
-        # if flag == 'test':
-        #     print('Starting testing...')
-        #     return test(parameter_list, model)
-
+        if flag == 'test':
+            print('Starting testing...')
+            test(parameter_list, model)
+            return parameter_list['global_epoch']
         if flag == 'train':
-            print('Starting training for a restored point... \n')
+            print('Starting training from a restored point... \n')
             return train(parameter_list, model, checkpoint, manager, summary_writer, optimizer)
         
     else:
         print("No checkpoint exists.")
         
-        # if flag == 'test':
-        #     print('Cannot test as no checkpoint exists. Exiting...')
-        #     return parameter_list
+        if flag == 'test':
+             print('Cannot test as no checkpoint exists. Exiting...')
+             return parameter_list['global_epoch']
         
         if flag == 'train':
             print('Initializing from scratch... \n')
             parameter_list = train(parameter_list, model, checkpoint, manager, summary_writer, optimizer)
-            return parameter_list
+            return parameter_list['global_epoch']
+
+    print(learning_rate)
