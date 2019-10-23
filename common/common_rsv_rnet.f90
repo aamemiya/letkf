@@ -136,6 +136,37 @@ deallocate(train_smp,r_smp)
 return
 end subroutine rsv_rnet_train_batch
 !--------------------------------------------------------!
+subroutine rsv_rnet_train_seq(nsmp,x_in,x_out,vnu)
+integer,intent(in)::nsmp
+real(r_size),intent(in)::x_in(:,:)
+real(r_size),intent(IN)::x_out(:,:)
+real(r_size),allocatable::r_smp(:,:)
+real(r_size),intent(IN)::vnu
+integer::ismp
+real(r_size),allocatable::x_f_test(:)
+
+if(.not.flag_init)then
+ write(*,*) 'call init first.'
+ stop
+end if
+allocate(r_smp(nr,nsmp))
+
+do ismp=1,nsmp
+ call rsv_rnet_input(x_in(:,ismp))
+ r_smp(:,ismp)=r
+end do
+
+
+ call reg_train_seq(nsmp,r_smp,x_out,vnu)
+!
+! call reg_fcst(r_smp(:,nsmp),x_f_test)
+! write(*,*) x_f_test(1:3)
+
+deallocate(r_smp)
+
+return
+end subroutine rsv_rnet_train_seq
+!--------------------------------------------------------!
 subroutine rsv_rnet_fcst(x_in,x_out)
 real(r_size),intent(in)::x_in(:)
 real(r_size),intent(out)::x_out(:)
