@@ -4,7 +4,7 @@ use common_rsv_rnet
 
 implicit NONE
 
-integer,parameter::nx=3
+integer,parameter::nx=1
 integer,parameter::nr=500
 
 real(r_size),parameter::dt=0.10
@@ -15,7 +15,7 @@ integer,parameter::nt_test=200
 integer,parameter::nrdim_ave=3
 real(r_size),parameter::vrho_in=0.4
 real(r_size),parameter::vsig_in=0.15
-real(r_size),parameter::vreg_in=0.02
+real(r_size),parameter::vreg_in=0.20
 
 real(r_size)::x_train(nx,nt_train)
 real(r_size)::x(nx)

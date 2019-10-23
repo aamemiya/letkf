@@ -9,7 +9,7 @@ PROGRAM obsmake
   IMPLICIT NONE
 
   INTEGER,PARAMETER :: nt=10000
-  REAL(r_size),PARAMETER :: obserr=1.0d0
+  REAL(r_size),PARAMETER :: obserr=0.01d0
   REAL(r_sngl) :: x4(nx)
   REAL(r_size) :: x(nx)
   REAL(r_size) :: ober(ny*nt)

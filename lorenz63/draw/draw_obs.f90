@@ -3,24 +3,20 @@ module setup
 implicit real(a-h,o-z)
 
 real(4),parameter::dt=0.01
+integer,parameter::nt=1000
 real(4),parameter::a=10.0
 real(4),parameter::b=28.0
 real(4),parameter::c=8.0/3.0
-
-character*30::cfile_nature="../DATA/nature.dat"
-character*30::cfile_model="../DATA/fcst/fcst.dat"
-
-integer,parameter::nt_fcst=100
-integer,parameter::nt_sync=100
-integer,parameter::nt_bufr=10
-integer,parameter::nt=nt_sync+nt_fcst
-integer,parameter::nt_draw=nt_bufr+nt_fcst
-integer,parameter::nt_gap=nt_sync-nt_bufr
-real(4)::vmin,vmax
-real(4)::vtic
 real(4)::x(0:nt),y(0:nt),z(0:nt),v(0:nt)
 real(4)::xm(0:nt),ym(0:nt),zm(0:nt),vm(0:nt)
 
+
+character*30::cfile_nature="../DATA/single_x/obs_test.dat"
+character*30::cfile_model="../DATA/single_x/fcst/fcst.dat"
+
+integer,parameter::nt_draw=200
+real(4)::vmin,vmax
+real(4)::vtic
 
 end module setup
 !==========================================!
@@ -44,7 +40,7 @@ use setup
 
 open(11,file=trim(cfile_nature),form='unformatted')
 do it=0,nt-1
- read(11) x(it),y(it),z(it)
+ read(11) x(it)
 ! write(*,*) it,x(it),y(it),z(it)
 end do
 close(11)
@@ -54,10 +50,10 @@ ym=0.0
 zm=0.0
 
 open(11,file=trim(cfile_model),form='unformatted')
-do it=0,nt-1
+do it=0,nt_draw-1
 ! read(11,rec=it+1) xm(it),ym(it),zm(it)
- read(11) xm(it),ym(it),zm(it)
- write(*,*) it,xm(it),ym(it),zm(it)
+ read(11) xm(it)
+! write(*,*) it,xm(it)
 end do
 close(11)
 
@@ -91,7 +87,7 @@ iout=2
       call slmgn (0.0,0.0,0.0,0.0) ! margin 
 
       call grfrm 
-      call grswnd (real(nt_gap+1)*dt,real(nt_sync+nt_fcst)*dt ,vmin,vmax) ! set window
+      call grswnd (0.0,real(nt_draw)*dt ,vmin,vmax) ! set window
 
        vpl=0.17; vpr=0.77; vpb=0.23 ; vpt=0.73
        call grsvpt (vpl,vpr,vpb,vpt) ! set viewport
@@ -104,22 +100,19 @@ iout=2
 
       call uuslnt(1)
       call uuslni(23)
-      call uulin (nt_draw,(/(real(nt_gap+i)*dt, i=1,nt_draw)/),x(nt_gap+1:nt))
-      call uuslni(43)
-      call uulin (nt_draw,(/(real(nt_gap+i)*dt, i=1,nt_draw)/),3.0*(x(nt_gap+1:nt)-y(nt_gap+1:nt)))
-      call uuslni(63)
-      call uulin (nt_draw,(/(real(nt_gap+i)*dt, i=1,nt_draw)/),z(nt_gap+1:nt))
+      call uulin (nt_draw,(/(real(i)*dt, i=0,nt_draw)/),x(0:nt_draw))
+!      call uuslni(43)
+!      call uulin (nt_draw,(/(real(i)*dt, i=0,nt_draw)/),3.0*(x(0:nt_draw)-y(0:nt_draw)))
+!      call uuslni(63)
+!      call uulin (nt_draw,(/(real(i)*dt, i=0,nt_draw)/),z(0:nt_draw))
 
       call uuslnt(3)
       call uuslni(23)
-      call uulin (nt_draw,(/(real(nt_gap+i)*dt, i=1,nt_draw)/),xm(nt_gap+1:nt))
-      call uuslni(43)
-      call uulin (nt_draw,(/(real(nt_gap+i)*dt, i=1,nt_draw)/),3.0*(xm(nt_gap+1:nt)-ym(nt_gap+1:nt)))
-      call uuslni(63)
-      call uulin (nt_draw,(/(real(nt_gap+i)*dt, i=1,nt_draw)/),zm(nt_gap+1:nt))
-
-      call uuslni(1)
-      call uulin(2,(/real(nt_sync)*dt,real(nt_sync)*dt/),(/vmin,vmax/))
+      call uulin (nt_draw,(/(real(i)*dt, i=0,nt_draw)/),xm(0:nt_draw))
+!      call uuslni(43)
+!      call uulin (nt_draw,(/(real(i)*dt, i=0,nt_draw)/),3.0*(xm(0:nt_draw)-ym(0:nt_draw)))
+!      call uuslni(63)
+!      call uulin (nt_draw,(/(real(i)*dt, i=0,nt_draw)/),zm(0:nt_draw))
 
 ! **** x ,y axis ****
       call UYSFMT('(F5.1)')
